@@ -8,3 +8,4 @@
 export * from "./LiCommandRegistry";
 export * from "./LiBaseSocket";
 export * from "./LiSocket";
+export * from "./LiServer";

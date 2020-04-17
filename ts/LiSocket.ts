@@ -12,25 +12,42 @@ import {
 } from "./LiCommandRegistry";
 
 import {PromResolve, PromReject} from "@elijahjcobb/prom-type";
-import WS from "ws";
+import * as WS from "ws";
+import {LiLogger} from "./LiLogger";
+
+export interface LiSocketConfig {
+	address: string;
+	debug: boolean;
+}
 
 export class LiSocket<LocalCommands extends LiCommandRegistryStructure, RemoteCommands extends LiCommandRegistryStructure> extends LiBaseSocket<LocalCommands, RemoteCommands> {
 
-	private constructor(ws: WS) {
+	private constructor(config: LiSocketConfig, ws: WS) {
 
 		super(ws);
 
 	}
 
-	public static init<LocalCommands extends LiCommandRegistryStructure, RemoteCommands extends LiCommandRegistryStructure>(address: string): Promise<LiSocket<LocalCommands, RemoteCommands>> {
+	public static init<LocalCommands extends LiCommandRegistryStructure, RemoteCommands extends LiCommandRegistryStructure>(config: LiSocketConfig): Promise<LiSocket<LocalCommands, RemoteCommands>> {
+
+		if (config.debug) LiLogger.enable();
 
 		return new Promise((resolve: PromResolve<LiSocket<LocalCommands, RemoteCommands>>, reject: PromReject): void => {
 
-			const ws: WS = new WS(address);
+			LiLogger.log(`Preparing to open new socket to: '${config.address}'.`);
+
+			const ws: WS = new WS(config.address);
+
+			LiLogger.log(`Waiting to open new socket with: '${config.address}'.`);
 
 			ws.on("open", (): void => {
 
-				const socket: LiSocket<LocalCommands, RemoteCommands> = new LiSocket(ws);
+				LiLogger.log(`Did open new socket with: '${config.address}'.`);
+
+				const socket: LiSocket<LocalCommands, RemoteCommands> = new LiSocket(config, ws);
+
+				LiLogger.log(`Did create LiSocket instance from WS socket.`);
+
 				resolve(socket);
 
 			});

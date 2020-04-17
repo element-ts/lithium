@@ -14,8 +14,14 @@ import {
 } from "./LiCommandRegistry";
 
 import {LiBaseSocket} from "./LiBaseSocket";
-import WS from "ws";
+import * as WS from "ws";
 import * as Crypto from "crypto";
+import {LiLogger} from "./LiLogger";
+
+export interface LiServerConfig {
+	debug: boolean;
+	port: number;
+}
 
 export class LiServer<LocalCommands extends LiCommandRegistryStructure, RemoteCommands extends LiCommandRegistryStructure> {
 
@@ -23,16 +29,22 @@ export class LiServer<LocalCommands extends LiCommandRegistryStructure, RemoteCo
 	private sockets: Map<string, LiBaseSocket<any, any>>;
 	private readonly commandRegistry: LiCommandRegistry<LocalCommands>;
 
-	public constructor(port: number) {
+	public constructor(config: LiServerConfig) {
+
+		if (config.debug) LiLogger.enable();
 
 		this.commandRegistry = new LiCommandRegistry();
-		this.server = new WS.Server({port});
+		this.server = new WS.Server({port: config.port});
 		this.sockets = new Map<string, LiBaseSocket<any, any>>();
+
+		this.handleNewConnection = this.handleNewConnection.bind(this);
 		this.server.on("connection", this.handleNewConnection);
 
 	}
 
 	private handleNewConnection(ws: WS): void {
+
+		LiLogger.log(`Did receive new connection.`);
 
 		let id: string = Crypto.randomBytes(16).toString("hex");
 		while (this.sockets.has(id)) id = Crypto.randomBytes(16).toString("hex");
@@ -42,7 +54,13 @@ export class LiServer<LocalCommands extends LiCommandRegistryStructure, RemoteCo
 
 	}
 
-	public implement<C extends LiCommandName<LocalCommands>>(command: C, handler: LiCommandHandlerStructure<LocalCommands, C>): void {
+	public getSockets(): IterableIterator<LiBaseSocket<RemoteCommands, LocalCommands>> {
+
+		return this.sockets.values();
+
+	}
+
+	public implement<C extends LiCommandName<LocalCommands>>(command: C, handler: LiCommandHandlerStructure<LocalCommands, RemoteCommands, C>): void {
 		this.commandRegistry.implement(command, handler);
 	}
 

@@ -6,7 +6,7 @@
  */
 
 import WS from "ws";
-import {StandardType, ObjectType, SpecialType} from "typit";
+import {StandardType, ObjectType, SpecialType, OptionalType} from "typit";
 import {PromReject, PromResolve} from "@elijahjcobb/prom-type";
 
 
@@ -19,6 +19,7 @@ import {
 	LiCommandRegistryStructure
 } from "./LiCommandRegistry";
 import {LiMessage, LiMessageHandler, LiMessageManager} from "./LiMessageManager";
+import {LiLogger} from "./LiLogger";
 
 export class LiBaseSocket<
 	LocalCommands extends LiCommandRegistryStructure,
@@ -37,6 +38,7 @@ export class LiBaseSocket<
 		this.messageManager = new LiMessageManager();
 		this.socket = socket;
 
+		this.onMessage = this.onMessage.bind(this);
 		this.socket.on("message", this.onMessage);
 
 	}
@@ -47,9 +49,12 @@ export class LiBaseSocket<
 			const messageString: string = JSON.stringify(message);
 			const messageData: Buffer = Buffer.from(messageString);
 
+			LiLogger.log(`Will send message (${message.id}): '${messageString}'.`);
+
 			this.socket.send(messageData, (err?: Error): void => {
 
 				if (err) return reject(err);
+				LiLogger.log(`Did send message (${message.id}).`);
 				resolve();
 
 			});
@@ -60,9 +65,11 @@ export class LiBaseSocket<
 	private async onMessage(data: WS.Data): Promise<void> {
 
 		if (!(data instanceof Buffer)) {
-			console.error("LiBaseSocket.onMessage(): Data received was not an instance of Buffer.");
+			LiLogger.error("LiBaseSocket.onMessage(): Data received was not an instance of Buffer.");
 			return;
 		}
+
+		LiLogger.log(`Did receive message (${data.length.toLocaleString()} bytes).`);
 
 		const dataAsString: string = data.toString("utf8");
 		let message: LiMessage;
@@ -70,7 +77,7 @@ export class LiBaseSocket<
 		try {
 			message = JSON.parse(dataAsString);
 		} catch (e) {
-			console.error("LiBaseSocket.onMessage(): Data received was able to parse to JSON.");
+			LiLogger.error("LiBaseSocket.onMessage(): Data received was able to parse to JSON.");
 			return;
 		}
 
@@ -78,11 +85,15 @@ export class LiBaseSocket<
 			timestamp: StandardType.NUMBER,
 			command: StandardType.STRING,
 			id: StandardType.STRING,
-			param: SpecialType.ANY
+			param: new OptionalType(SpecialType.ANY)
 		});
 
+		LiLogger.log(`Did parse message (${message.id}) -> '${dataAsString}'.`);
+
 		const isValid: boolean = requiredType.checkConformity(message);
+
 		if (!isValid) {
+			console.error(message);
 			console.error("LiBaseSocket.onMessage(): Data received did not conform to lithium message types.");
 			return;
 		}
@@ -91,6 +102,7 @@ export class LiBaseSocket<
 
 		if (commend === "return" || commend === "error") return this.handleOnReturn(message);
 
+		LiLogger.log(`Looking for handler for message (${message.id}).`);
 		const handler: LiCommandHandler | undefined = this.commandRegistry.getHandlerForCommand(commend);
 
 		if (handler === undefined) {
@@ -101,12 +113,14 @@ export class LiBaseSocket<
 				param: new Error("Command does not exist."),
 				id: message.id
 			});
-			console.error("LiBaseSocket.onMessage(): Command not found.");
+			LiLogger.error("LiBaseSocket.onMessage(): Command not found.");
 			return;
 		}
 
+		LiLogger.log(`Found handler for message (${message.id}).`);
+
 		const param: any = message.param;
-		const returnValue: any = await handler(param);
+		const returnValue: any = await handler(param, this);
 
 		await this.send({
 			timestamp: message.timestamp,
@@ -119,9 +133,11 @@ export class LiBaseSocket<
 
 	private async handleOnReturn(message: LiMessage): Promise<void> {
 
+		LiLogger.log(`Message (${message.id}) is a response.`);
+
 		const handler: LiMessageHandler | undefined = this.messageManager.getHandler(message.id);
 		if (handler === undefined) {
-			console.error("LiBaseSocket.handleOnReturn(): Handler not found for message id.");
+			LiLogger.error("LiBaseSocket.handleOnReturn(): Handler not found for message id.");
 			return;
 		}
 
@@ -129,7 +145,7 @@ export class LiBaseSocket<
 
 	}
 
-	public implement<C extends LiCommandName<LocalCommands>>(command: C, handler: LiCommandHandlerStructure<LocalCommands, C>): void {
+	public implement<C extends LiCommandName<LocalCommands>>(command: C, handler: LiCommandHandlerStructure<LocalCommands, RemoteCommands, C>): void {
 		this.commandRegistry.implement(command, handler);
 	}
 
