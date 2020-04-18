@@ -26,6 +26,12 @@ import {ClientCommandSet, ServerCommandSet} from "./playground-types";
 
 	});
 
+	socket.implement("end", async(): Promise<void> => {
+
+		console.log("Its the end of the world as we know it.");
+
+	});
+
 	await socket.invoke("birthday", {age: 2, name: "Elijah"});
 
 })();

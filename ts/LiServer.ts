@@ -17,6 +17,7 @@ import {LiBaseSocket} from "./LiBaseSocket";
 import * as WS from "ws";
 import * as Crypto from "crypto";
 import {LiLogger} from "./LiLogger";
+import * as HTTP from "http";
 
 export interface LiServerConfig {
 	debug: boolean;
@@ -28,6 +29,8 @@ export class LiServer<LocalCommands extends LiCommandRegistryStructure, RemoteCo
 	private server: WS.Server;
 	private sockets: Map<string, LiBaseSocket<any, any>>;
 	private readonly commandRegistry: LiCommandRegistry<LocalCommands>;
+	public onSocketClose: ((socket: LiBaseSocket<RemoteCommands, LocalCommands>) => void) | undefined;
+	public onSocketOpen: ((socket: LiBaseSocket<RemoteCommands, LocalCommands>, req: HTTP.IncomingMessage) => void) | undefined;
 
 	public constructor(config: LiServerConfig) {
 
@@ -42,15 +45,24 @@ export class LiServer<LocalCommands extends LiCommandRegistryStructure, RemoteCo
 
 	}
 
-	private handleNewConnection(ws: WS): void {
+	private handleNewConnection(ws: WS, req: HTTP.IncomingMessage): void {
 
-		LiLogger.log(`Did receive new connection.`);
+		LiLogger.log(`Did receive new connection from ip: '${req.connection.remoteAddress}'.`);
 
 		let id: string = Crypto.randomBytes(16).toString("hex");
 		while (this.sockets.has(id)) id = Crypto.randomBytes(16).toString("hex");
 
 		const socket: LiBaseSocket<any, any> = new LiBaseSocket(ws, this.commandRegistry, id);
+
+		socket.onClose = ((): void => {
+
+			this.sockets.delete(id);
+			if (this.onSocketClose) this.onSocketClose(socket);
+
+		});
+
 		this.sockets.set(id, socket);
+		if (this.onSocketOpen) this.onSocketOpen(socket, req);
 
 	}
 

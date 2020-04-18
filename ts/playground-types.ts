@@ -12,6 +12,10 @@ export interface ClientCommandSet extends LiCommandRegistryStructure {
 		param: string;
 		return: string;
 	};
+	end: {
+		param: void;
+		return: void;
+	};
 }
 
 export interface ServerCommandSet extends LiCommandRegistryStructure {

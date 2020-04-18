@@ -7,6 +7,7 @@
 
 import {LiBaseSocket, LiServer} from "./index";
 import {ClientCommandSet, ServerCommandSet} from "./playground-types";
+import * as HTTP from "http";
 
 (async(): Promise<void> => {
 
@@ -21,11 +22,21 @@ import {ClientCommandSet, ServerCommandSet} from "./playground-types";
 
 	});
 
-	server.implement("end", async(): Promise<string> => {
+	server.implement("end", async(param: void, socket: LiBaseSocket<ClientCommandSet, ServerCommandSet>): Promise<string> => {
 
 		console.log("END CALLED!");
+
+		await socket.invoke("end", undefined);
+
 		return "end";
 
 	});
+
+	server.onSocketOpen = (socket: LiBaseSocket<ClientCommandSet, ServerCommandSet>, req: HTTP.IncomingMessage): void => {
+
+		console.log("HELLO HELLO HELLO!!! to: " + socket.id);
+		socket.close();
+
+	};
 
 })();

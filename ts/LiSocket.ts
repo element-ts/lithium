@@ -18,6 +18,7 @@ import {LiLogger} from "./LiLogger";
 export interface LiSocketConfig {
 	address: string;
 	debug: boolean;
+	bearer?: string;
 }
 
 export class LiSocket<LocalCommands extends LiCommandRegistryStructure, RemoteCommands extends LiCommandRegistryStructure> extends LiBaseSocket<LocalCommands, RemoteCommands> {
@@ -36,7 +37,11 @@ export class LiSocket<LocalCommands extends LiCommandRegistryStructure, RemoteCo
 
 			LiLogger.log(`Preparing to open new socket to: '${config.address}'.`);
 
-			const ws: WS = new WS(config.address);
+			const ws: WS = new WS(config.address, {
+				headers: {
+					authorization: config.bearer,
+				}
+			});
 
 			LiLogger.log(`Waiting to open new socket with: '${config.address}'.`);
 

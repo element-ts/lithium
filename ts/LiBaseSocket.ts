@@ -26,25 +26,37 @@ export class LiBaseSocket<
 	RemoteCommands extends LiCommandRegistryStructure
 	> {
 
+	private isConnected: boolean = false;
 	protected commandRegistry: LiCommandRegistry<LocalCommands>;
 	protected messageManager: LiMessageManager;
 	protected socket: WS;
+
 	public readonly id: string;
+	public onClose: ((code?: number, reason?: string) => void) | undefined;
+	public onError: ((error: Error) => void) | undefined;
 
 	public constructor(socket: WS, commandRegistry?: LiCommandRegistry<LocalCommands>, id: string = "") {
 
 		this.id = id;
+		this.socket = socket;
 		this.commandRegistry = commandRegistry || new LiCommandRegistry<LocalCommands>();
 		this.messageManager = new LiMessageManager();
-		this.socket = socket;
 
 		this.onMessage = this.onMessage.bind(this);
 		this.socket.on("message", this.onMessage);
+
+		this.handleOnClose = this.handleOnClose.bind(this);
+		this.socket.on("close", this.handleOnClose);
+
+		this.handleOnError = this.handleOnError.bind(this);
+		this.socket.on("error", this.handleOnError);
 
 	}
 
 	private send<T = any>(message: LiMessage<T>): Promise<void> {
 		return new Promise<void>((resolve: PromResolve<void>, reject: PromReject): void => {
+
+			if (!this.isConnected) return resolve();
 
 			const messageString: string = JSON.stringify(message);
 			const messageData: Buffer = Buffer.from(messageString);
@@ -120,14 +132,28 @@ export class LiBaseSocket<
 		LiLogger.log(`Found handler for message (${message.id}).`);
 
 		const param: any = message.param;
-		const returnValue: any = await handler(param, this);
 
-		await this.send({
-			timestamp: message.timestamp,
-			command: "return",
-			param: returnValue,
-			id: message.id
-		});
+		try {
+
+			const returnValue: any = await handler(param, this);
+
+			await this.send({
+				timestamp: message.timestamp,
+				command: "return",
+				param: returnValue,
+				id: message.id
+			});
+
+		} catch (e) {
+
+			await this.send({
+				timestamp: message.timestamp,
+				command: "error",
+				param: e,
+				id: message.id
+			});
+
+		}
 
 	}
 
@@ -145,8 +171,33 @@ export class LiBaseSocket<
 
 	}
 
+	private handleOnClose(code?: number, reason?: string): void {
+
+		LiLogger.log(`Connection did close with code '${code}' and message '${reason}'.`);
+		this.isConnected = false;
+		if (this.onClose) this.onClose(code, reason);
+
+	}
+
+	private handleOnError(err: Error): void {
+
+		LiLogger.error(`Connection receive error: ${err.name} '${err.message}'`);
+
+		if (this.onError) this.onError(err);
+
+	}
+
 	public implement<C extends LiCommandName<LocalCommands>>(command: C, handler: LiCommandHandlerStructure<LocalCommands, RemoteCommands, C>): void {
+
+		if (command === "return" || command === "error") {
+			throw new Error(
+				"You cannot implement the 'return' or 'error' command as these commands are required for" +
+				"internal communication."
+			);
+		}
+
 		this.commandRegistry.implement(command, handler);
+
 	}
 
 	public invoke<C extends LiCommandName<RemoteCommands>>(command: C, param: LiCommandHandlerParam<RemoteCommands, C>): LiCommandHandlerReturn<RemoteCommands, C> {
@@ -173,6 +224,13 @@ export class LiBaseSocket<
 			});
 
 		});
+	}
+
+	public async close(): Promise<void> {
+
+		this.socket.close();
+		this.handleOnClose();
+
 	}
 
 }
