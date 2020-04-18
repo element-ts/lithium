@@ -8,8 +8,7 @@
 		"outDir": "js",
 		"declarationDir": "dts",
 		"declaration": true,
-		"strict": true,
-		"allowSyntheticDefaultImports": true
+		"strict": true
 	},
 	"exclude": [
 		"node_modules"

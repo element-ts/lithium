@@ -5,7 +5,7 @@
  * github.com/elijahjcobb
  */
 
-import WS from "ws";
+import * as WS from "ws";
 import {StandardType, ObjectType, SpecialType, OptionalType} from "typit";
 import {PromReject, PromResolve} from "@elijahjcobb/prom-type";
 

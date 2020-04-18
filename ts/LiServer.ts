@@ -20,7 +20,7 @@ import {LiLogger} from "./LiLogger";
 import * as HTTP from "http";
 
 export interface LiServerConfig {
-	debug: boolean;
+	debug?: boolean;
 	port: number;
 }
 

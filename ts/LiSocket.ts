@@ -17,7 +17,7 @@ import {LiLogger} from "./LiLogger";
 
 export interface LiSocketConfig {
 	address: string;
-	debug: boolean;
+	debug?: boolean;
 	bearer?: string;
 }
 
@@ -39,7 +39,7 @@ export class LiSocket<LocalCommands extends LiCommandRegistryStructure, RemoteCo
 
 			const ws: WS = new WS(config.address, {
 				headers: {
-					authorization: config.bearer,
+					authorization: config.bearer ?? "",
 				}
 			});
 
