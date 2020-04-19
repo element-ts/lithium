@@ -23,9 +23,9 @@ export interface LiSocketConfig {
 
 export class LiSocket<LocalCommands extends LiCommandRegistryStructure, RemoteCommands extends LiCommandRegistryStructure> extends LiBaseSocket<LocalCommands, RemoteCommands> {
 
-	private constructor(config: LiSocketConfig, ws: WS) {
+	private constructor(config: LiSocketConfig, ws: WS, didReceiveId: () => void) {
 
-		super(ws);
+		super(ws, undefined, "", didReceiveId);
 
 	}
 
@@ -49,11 +49,15 @@ export class LiSocket<LocalCommands extends LiCommandRegistryStructure, RemoteCo
 
 				LiLogger.log(`Did open new socket with: '${config.address}'.`);
 
-				const socket: LiSocket<LocalCommands, RemoteCommands> = new LiSocket(config, ws);
+				LiLogger.log("Waiting for my id.");
+
+				const socket: LiSocket<LocalCommands, RemoteCommands> = new LiSocket(config, ws, (): void => {
+					LiLogger.log(`Did receive my id: ${socket.getId()}.`);
+					resolve(socket);
+				});
 
 				LiLogger.log(`Did create LiSocket instance from WS socket.`);
 
-				resolve(socket);
 
 			});
 

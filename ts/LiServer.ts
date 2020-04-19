@@ -66,9 +66,18 @@ export class LiServer<LocalCommands extends LiCommandRegistryStructure, RemoteCo
 
 	}
 
-	public getSockets(): IterableIterator<LiBaseSocket<RemoteCommands, LocalCommands>> {
+	public getSockets(): IterableIterator<LiBaseSocket<LocalCommands, RemoteCommands>> {
 
 		return this.sockets.values();
+
+	}
+
+	public async broadcast<C extends LiCommandName<RemoteCommands>>(command: C, param: LiCommandHandlerParam<RemoteCommands, C>): Promise<{[socketId: string]: LiCommandHandlerReturn<RemoteCommands, C>}> {
+
+		const map: {[socketId: string]: LiCommandHandlerReturn<RemoteCommands, C>} = {};
+		for (const socket of this.getSockets()) map[socket.getId()] = await socket.invoke(command, param);
+
+		return map;
 
 	}
 

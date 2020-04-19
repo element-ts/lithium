@@ -8,6 +8,7 @@
 import * as WS from "ws";
 import {StandardType, ObjectType, SpecialType, OptionalType} from "typit";
 import {PromReject, PromResolve} from "@elijahjcobb/prom-type";
+import {BetterJSON} from "@elijahjcobb/better-json";
 
 
 import {
@@ -26,21 +27,24 @@ export class LiBaseSocket<
 	RemoteCommands extends LiCommandRegistryStructure
 	> {
 
-	private isConnected: boolean = false;
+	private id: string;
+	private isConnected: boolean = true;
+	private didReceiveId: (() => void) | undefined;
+
 	protected commandRegistry: LiCommandRegistry<LocalCommands>;
 	protected messageManager: LiMessageManager;
 	protected socket: WS;
 
-	public readonly id: string;
 	public onClose: ((code?: number, reason?: string) => void) | undefined;
 	public onError: ((error: Error) => void) | undefined;
 
-	public constructor(socket: WS, commandRegistry?: LiCommandRegistry<LocalCommands>, id: string = "") {
+	public constructor(socket: WS, commandRegistry?: LiCommandRegistry<LocalCommands>, id: string = "", onDidReceiveId: ((() => void) | undefined) = undefined) {
 
 		this.id = id;
 		this.socket = socket;
 		this.commandRegistry = commandRegistry || new LiCommandRegistry<LocalCommands>();
 		this.messageManager = new LiMessageManager();
+		this.didReceiveId = onDidReceiveId;
 
 		this.onMessage = this.onMessage.bind(this);
 		this.socket.on("message", this.onMessage);
@@ -51,6 +55,20 @@ export class LiBaseSocket<
 		this.handleOnError = this.handleOnError.bind(this);
 		this.socket.on("error", this.handleOnError);
 
+		if (this.id !== "") {
+
+			LiLogger.log("Will send id to socket.");
+
+			this.send({
+				timestamp: Date.now(),
+				command: "id",
+				param: this.id,
+				id: this.id
+			})
+				.then((): void => LiLogger.log("Did send id to socket."))
+				.catch((err: any): void => LiLogger.error(err));
+		}
+
 	}
 
 	private send<T = any>(message: LiMessage<T>): Promise<void> {
@@ -58,7 +76,7 @@ export class LiBaseSocket<
 
 			if (!this.isConnected) return resolve();
 
-			const messageString: string = JSON.stringify(message);
+			const messageString: string = BetterJSON.stringify(message);
 			const messageData: Buffer = Buffer.from(messageString);
 
 			LiLogger.log(`Will send message (${message.id}): '${messageString}'.`);
@@ -87,7 +105,7 @@ export class LiBaseSocket<
 		let message: LiMessage;
 
 		try {
-			message = JSON.parse(dataAsString);
+			message = BetterJSON.parse(dataAsString);
 		} catch (e) {
 			LiLogger.error("LiBaseSocket.onMessage(): Data received was able to parse to JSON.");
 			return;
@@ -110,12 +128,12 @@ export class LiBaseSocket<
 			return;
 		}
 
-		const commend: string = message.command;
+		const command: string = message.command;
 
-		if (commend === "return" || commend === "error") return this.handleOnReturn(message);
+		if (command === "return" || command === "error" || command == "id") return this.handleOnReturn(message);
 
 		LiLogger.log(`Looking for handler for message (${message.id}).`);
-		const handler: LiCommandHandler | undefined = this.commandRegistry.getHandlerForCommand(commend);
+		const handler: LiCommandHandler | undefined = this.commandRegistry.getHandlerForCommand(command);
 
 		if (handler === undefined) {
 
@@ -146,10 +164,15 @@ export class LiBaseSocket<
 
 		} catch (e) {
 
+			LiLogger.error(e);
+
+			let formattedError: any = e;
+			if (e instanceof Error) formattedError = { error: e.message };
+
 			await this.send({
 				timestamp: message.timestamp,
 				command: "error",
-				param: e,
+				param: formattedError,
 				id: message.id
 			});
 
@@ -160,6 +183,13 @@ export class LiBaseSocket<
 	private async handleOnReturn(message: LiMessage): Promise<void> {
 
 		LiLogger.log(`Message (${message.id}) is a response.`);
+
+		if (message.command === "id") {
+			LiLogger.log("Message is incoming id from server.");
+			this.id = message.param;
+			if (this.didReceiveId) this.didReceiveId();
+			return ;
+		}
 
 		const handler: LiMessageHandler | undefined = this.messageManager.getHandler(message.id);
 		if (handler === undefined) {
@@ -211,6 +241,7 @@ export class LiBaseSocket<
 			};
 
 			const id: string = this.messageManager.generateId(handler);
+
 			this.send({
 				id,
 				command,
@@ -225,6 +256,8 @@ export class LiBaseSocket<
 
 		});
 	}
+
+	public getId(): string { return this.id; }
 
 	public async close(): Promise<void> {
 
