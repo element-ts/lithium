@@ -5,12 +5,7 @@
  * github.com/elijahjcobb
  */
 import {LiBaseSocket} from "./LiBaseSocket";
-import {
-	LiCommandHandlerStructure,
-	LiCommandName, LiCommandRegistry,
-	LiCommandRegistryStructure
-} from "./LiCommandRegistry";
-
+import {LiCommandRegistryStructure} from "./LiCommandRegistry";
 import {PromResolve, PromReject} from "@elijahjcobb/prom-type";
 import * as WS from "ws";
 import {LiLogger} from "./LiLogger";
@@ -21,7 +16,7 @@ export interface LiSocketConfig {
 	bearer?: string;
 }
 
-export class LiSocket<LocalCommands extends LiCommandRegistryStructure, RemoteCommands extends LiCommandRegistryStructure> extends LiBaseSocket<LocalCommands, RemoteCommands> {
+export class LiSocket<LC extends LiCommandRegistryStructure<LC>, RC extends LiCommandRegistryStructure<RC>> extends LiBaseSocket<LC, RC> {
 
 	private constructor(config: LiSocketConfig, ws: WS, didReceiveId: () => void) {
 
@@ -29,7 +24,7 @@ export class LiSocket<LocalCommands extends LiCommandRegistryStructure, RemoteCo
 
 	}
 
-	public static init<LocalCommands extends LiCommandRegistryStructure, RemoteCommands extends LiCommandRegistryStructure>(config: LiSocketConfig): Promise<LiSocket<LocalCommands, RemoteCommands>> {
+	public static init<LocalCommands extends LiCommandRegistryStructure<LocalCommands>, RemoteCommands extends LiCommandRegistryStructure<RemoteCommands>>(config: LiSocketConfig): Promise<LiSocket<LocalCommands, RemoteCommands>> {
 
 		if (config.debug) LiLogger.enable();
 

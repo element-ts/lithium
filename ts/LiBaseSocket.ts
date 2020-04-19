@@ -9,8 +9,6 @@ import * as WS from "ws";
 import {StandardType, ObjectType, SpecialType, OptionalType} from "typit";
 import {PromReject, PromResolve} from "@elijahjcobb/prom-type";
 import {BetterJSON} from "@elijahjcobb/better-json";
-
-
 import {
 	LiCommandHandler,
 	LiCommandHandlerParam, LiCommandHandlerReturn,
@@ -22,27 +20,24 @@ import {
 import {LiMessage, LiMessageHandler, LiMessageManager} from "./LiMessageManager";
 import {LiLogger} from "./LiLogger";
 
-export class LiBaseSocket<
-	LocalCommands extends LiCommandRegistryStructure,
-	RemoteCommands extends LiCommandRegistryStructure
-	> {
+export class LiBaseSocket<LC extends LiCommandRegistryStructure<LC>, RC extends LiCommandRegistryStructure<RC>> {
 
 	private id: string;
 	private isConnected: boolean = true;
-	private didReceiveId: (() => void) | undefined;
+	private readonly didReceiveId: (() => void) | undefined;
 
-	protected commandRegistry: LiCommandRegistry<LocalCommands>;
+	protected commandRegistry: LiCommandRegistry<LC>;
 	protected messageManager: LiMessageManager;
 	protected socket: WS;
 
 	public onClose: ((code?: number, reason?: string) => void) | undefined;
 	public onError: ((error: Error) => void) | undefined;
 
-	public constructor(socket: WS, commandRegistry?: LiCommandRegistry<LocalCommands>, id: string = "", onDidReceiveId: ((() => void) | undefined) = undefined) {
+	public constructor(socket: WS, commandRegistry?: LiCommandRegistry<LC>, id: string = "", onDidReceiveId: ((() => void) | undefined) = undefined) {
 
 		this.id = id;
 		this.socket = socket;
-		this.commandRegistry = commandRegistry || new LiCommandRegistry<LocalCommands>();
+		this.commandRegistry = commandRegistry || new LiCommandRegistry<LC>();
 		this.messageManager = new LiMessageManager();
 		this.didReceiveId = onDidReceiveId;
 
@@ -130,7 +125,7 @@ export class LiBaseSocket<
 
 		const command: string = message.command;
 
-		if (command === "return" || command === "error" || command == "id") return this.handleOnReturn(message);
+		if (command === "return" || command === "error" || command === "id") return this.handleOnReturn(message);
 
 		LiLogger.log(`Looking for handler for message (${message.id}).`);
 		const handler: LiCommandHandler | undefined = this.commandRegistry.getHandlerForCommand(command);
@@ -217,7 +212,7 @@ export class LiBaseSocket<
 
 	}
 
-	public implement<C extends LiCommandName<LocalCommands>>(command: C, handler: LiCommandHandlerStructure<LocalCommands, RemoteCommands, C>): void {
+	public implement<C extends LiCommandName<LC>>(command: C, handler: LiCommandHandlerStructure<LC, RC, C>): void {
 
 		if (command === "return" || command === "error") {
 			throw new Error(
@@ -230,7 +225,7 @@ export class LiBaseSocket<
 
 	}
 
-	public invoke<C extends LiCommandName<RemoteCommands>>(command: C, param: LiCommandHandlerParam<RemoteCommands, C>): LiCommandHandlerReturn<RemoteCommands, C> {
+	public invoke<C extends LiCommandName<RC>>(command: C, param: LiCommandHandlerParam<RC, C>): LiCommandHandlerReturn<RC, C> {
 		return new Promise((resolve: PromResolve<any>, reject: PromReject): void => {
 
 			const handler: (message: LiMessage) => void = (message: LiMessage): void => {

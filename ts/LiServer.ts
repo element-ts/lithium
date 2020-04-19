@@ -24,13 +24,13 @@ export interface LiServerConfig {
 	port: number;
 }
 
-export class LiServer<LocalCommands extends LiCommandRegistryStructure, RemoteCommands extends LiCommandRegistryStructure> {
+export class LiServer<LC extends LiCommandRegistryStructure<LC>, RC extends LiCommandRegistryStructure<RC>> {
 
 	private server: WS.Server;
 	private sockets: Map<string, LiBaseSocket<any, any>>;
-	private readonly commandRegistry: LiCommandRegistry<LocalCommands>;
-	public onSocketClose: ((socket: LiBaseSocket<RemoteCommands, LocalCommands>) => void) | undefined;
-	public onSocketOpen: ((socket: LiBaseSocket<RemoteCommands, LocalCommands>, req: HTTP.IncomingMessage) => void) | undefined;
+	private readonly commandRegistry: LiCommandRegistry<LC>;
+	public onSocketClose: ((socket: LiBaseSocket<RC, LC>) => void) | undefined;
+	public onSocketOpen: ((socket: LiBaseSocket<RC, LC>, req: HTTP.IncomingMessage) => void) | undefined;
 
 	public constructor(config: LiServerConfig) {
 
@@ -66,30 +66,30 @@ export class LiServer<LocalCommands extends LiCommandRegistryStructure, RemoteCo
 
 	}
 
-	public getSockets(): IterableIterator<LiBaseSocket<LocalCommands, RemoteCommands>> {
+	public getSockets(): IterableIterator<LiBaseSocket<LC, RC>> {
 
 		return this.sockets.values();
 
 	}
 
-	public async broadcast<C extends LiCommandName<RemoteCommands>>(command: C, param: LiCommandHandlerParam<RemoteCommands, C>): Promise<{[socketId: string]: LiCommandHandlerReturn<RemoteCommands, C>}> {
+	public async broadcast<C extends LiCommandName<RC>>(command: C, param: LiCommandHandlerParam<RC, C>): Promise<{[socketId: string]: LiCommandHandlerReturn<RC, C>}> {
 
-		const map: {[socketId: string]: LiCommandHandlerReturn<RemoteCommands, C>} = {};
+		const map: {[socketId: string]: LiCommandHandlerReturn<RC, C>} = {};
 		for (const socket of this.getSockets()) map[socket.getId()] = await socket.invoke(command, param);
 
 		return map;
 
 	}
 
-	public implement<C extends LiCommandName<LocalCommands>>(command: C, handler: LiCommandHandlerStructure<LocalCommands, RemoteCommands, C>): void {
+	public implement<C extends LiCommandName<LC>>(command: C, handler: LiCommandHandlerStructure<LC, RC, C>): void {
 		this.commandRegistry.implement(command, handler);
 	}
 
-	public invoke<C extends LiCommandName<RemoteCommands>>(id: string, command: C, param: LiCommandHandlerParam<RemoteCommands, C>): LiCommandHandlerReturn<RemoteCommands, C> | undefined {
+	public invoke<C extends LiCommandName<RC>>(id: string, command: C, param: LiCommandHandlerParam<RC, C>): LiCommandHandlerReturn<RC, C> | undefined {
 		return this.getSocket(id)?.invoke(command, param);
 	}
 
-	public getSocket(id: string): LiBaseSocket<LocalCommands, RemoteCommands> | undefined {
+	public getSocket(id: string): LiBaseSocket<LC, RC> | undefined {
 
 		return this.sockets.get(id);
 

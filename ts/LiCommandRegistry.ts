@@ -6,14 +6,25 @@
  */
 import {LiBaseSocket} from "./LiBaseSocket";
 
-export type LiCommandRegistryStructure = { [key: string]: { param: any; return: any; }; };
-export type LiCommandName<T extends LiCommandRegistryStructure> = keyof T & string;
-export type LiCommandHandler = (value: any, socket: LiBaseSocket<any, any>) => Promise<any>;
-export type LiCommandHandlerParam<T extends LiCommandRegistryStructure, C extends LiCommandName<T>> = T[C]["param"];
-export type LiCommandHandlerReturn<T extends LiCommandRegistryStructure, C extends LiCommandName<T>> = Promise<T[C]["return"]>;
-export type LiCommandHandlerStructure<LC extends LiCommandRegistryStructure, RC extends LiCommandRegistryStructure, C extends LiCommandName<LC>> = (value: LiCommandHandlerParam<LC, C>, socket: LiBaseSocket<RC, LC>) => LiCommandHandlerReturn<LC, C>;
+export type LiCommandRegistryCommand<P = any, R = any> = {
+	param: P;
+	return: R;
+};
 
-export class LiCommandRegistry<T extends LiCommandRegistryStructure> {
+export type LiCommandRegistryStructure<T extends object = object> = {
+	[key in keyof T]: LiCommandRegistryCommand;
+};
+
+export type LiCommandHandler = (value: any, socket: LiBaseSocket<any, any>) => Promise<any>;
+
+export type LiCommandName<T extends LiCommandRegistryStructure> = (keyof T) & string;
+export type LiCommand<T extends LiCommandRegistryStructure, C extends LiCommandName<T>> = T[C];
+export type LiCommandHandlerParam<T extends LiCommandRegistryStructure<T>, C extends LiCommandName<T>> = LiCommand<T, C>["param"];
+export type LiCommandHandlerReturn<T extends LiCommandRegistryStructure<T>, C extends LiCommandName<T>> = Promise<LiCommand<T, C>["return"]>;
+
+export type LiCommandHandlerStructure<LC extends LiCommandRegistryStructure<LC>, RC extends LiCommandRegistryStructure<RC>, C extends LiCommandName<LC>> = (value: LiCommandHandlerParam<LC, C>, socket: LiBaseSocket<RC, LC>) => LiCommandHandlerReturn<LC, C>;
+
+export class LiCommandRegistry<T extends LiCommandRegistryStructure<T>> {
 
 	private commands: Map<string, LiCommandHandler>;
 
