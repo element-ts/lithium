@@ -6,7 +6,7 @@
  */
 
 import {
-	LiCommandHandlerParam, LiCommandHandlerReturn,
+	LiCommandHandlerParam, LiCommandHandlerReturnPromisified,
 	LiCommandHandlerStructure,
 	LiCommandName,
 	LiCommandRegistry,
@@ -30,7 +30,7 @@ export class LiServer<LC extends LiCommandRegistryStructure<LC>, RC extends LiCo
 	private sockets: Map<string, LiBaseSocket<any, any>>;
 	private readonly commandRegistry: LiCommandRegistry<LC>;
 	public onSocketClose: ((socket: LiBaseSocket<RC, LC>) => void) | undefined;
-	public onSocketOpen: ((socket: LiBaseSocket<RC, LC>, req: HTTP.IncomingMessage) => void) | undefined;
+	public onSocketOpen: ((socket: LiBaseSocket<RC, LC>, req: HTTP.IncomingMessage) => Promise<void>) | undefined;
 
 	public constructor(config: LiServerConfig) {
 
@@ -40,9 +40,22 @@ export class LiServer<LC extends LiCommandRegistryStructure<LC>, RC extends LiCo
 		this.server = new WS.Server({port: config.port});
 		this.sockets = new Map<string, LiBaseSocket<any, any>>();
 
+		this.handlePeerToPeerSetup();
+
 		this.handleNewConnection = this.handleNewConnection.bind(this);
 		this.server.on("connection", this.handleNewConnection);
 
+
+	}
+
+	private handlePeerToPeerSetup(): void {
+
+		// @ts-ignore
+		this.implement("invokeSibling", async(param: { param: any, id: string, command: LiCommandName<RC>}): Promise<any> => {
+
+			return this.invoke(param.id, param.command, param.param, true);
+
+		});
 	}
 
 	private handleNewConnection(ws: WS, req: HTTP.IncomingMessage): void {
@@ -62,7 +75,7 @@ export class LiServer<LC extends LiCommandRegistryStructure<LC>, RC extends LiCo
 		});
 
 		this.sockets.set(id, socket);
-		if (this.onSocketOpen) this.onSocketOpen(socket, req);
+		if (this.onSocketOpen) this.onSocketOpen(socket, req).catch((err: any): void => LiLogger.error(err));
 
 	}
 
@@ -72,9 +85,9 @@ export class LiServer<LC extends LiCommandRegistryStructure<LC>, RC extends LiCo
 
 	}
 
-	public async broadcast<C extends LiCommandName<RC>>(command: C, param: LiCommandHandlerParam<RC, C>): Promise<{[socketId: string]: LiCommandHandlerReturn<RC, C>}> {
+	public async broadcast<C extends LiCommandName<RC>>(command: C, param: LiCommandHandlerParam<RC, C>): Promise<{[socketId: string]: LiCommandHandlerReturnPromisified<RC, C>}> {
 
-		const map: {[socketId: string]: LiCommandHandlerReturn<RC, C>} = {};
+		const map: {[socketId: string]: LiCommandHandlerReturnPromisified<RC, C>} = {};
 		for (const socket of this.getSockets()) map[socket.getId()] = await socket.invoke(command, param);
 
 		return map;
@@ -82,11 +95,11 @@ export class LiServer<LC extends LiCommandRegistryStructure<LC>, RC extends LiCo
 	}
 
 	public implement<C extends LiCommandName<LC>>(command: C, handler: LiCommandHandlerStructure<LC, RC, C>): void {
-		this.commandRegistry.implement(command, handler);
+		this.commandRegistry.implement(command, handler, true);
 	}
 
-	public invoke<C extends LiCommandName<RC>>(id: string, command: C, param: LiCommandHandlerParam<RC, C>): LiCommandHandlerReturn<RC, C> | undefined {
-		return this.getSocket(id)?.invoke(command, param);
+	public invoke<C extends LiCommandName<RC>>(id: string, command: C, param: LiCommandHandlerParam<RC, C>, peerToPeer: boolean = false): LiCommandHandlerReturnPromisified<RC, C> | undefined {
+		return this.getSocket(id)?.invoke(command, param, peerToPeer);
 	}
 
 	public getSocket(id: string): LiBaseSocket<LC, RC> | undefined {

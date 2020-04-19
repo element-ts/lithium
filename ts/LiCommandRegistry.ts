@@ -7,7 +7,7 @@
 import {LiBaseSocket} from "./LiBaseSocket";
 
 export type LiCommandRegistryCommand<P = any, R = any> = {param: P, return: R};
-export type LiCommandRegistryStructure<T extends object = object> = {[key in keyof T]: LiCommandRegistryCommand};
+export type LiCommandRegistryStructure<T extends object = object> = { [key in keyof T]: LiCommandRegistryCommand; };
 export type LiCommandHandler = (value: any, socket: LiBaseSocket<any, any>) => Promise<any>;
 export type LiCommandName<T extends LiCommandRegistryStructure> = (keyof T) & string;
 export type LiCommand<T extends LiCommandRegistryStructure, C extends LiCommandName<T>> = T[C];
@@ -17,33 +17,44 @@ export type LiCommandHandlerParam<
 	C extends LiCommandName<T>
 > = LiCommand<T, C>["param"];
 
+
 export type LiCommandHandlerReturn<
 	T extends LiCommandRegistryStructure<T>,
 	C extends LiCommandName<T>
-> = Promise<LiCommand<T, C>["return"]>;
+> = LiCommand<T, C>["return"];
+
+export type LiCommandHandlerReturnPromisified<
+	T extends LiCommandRegistryStructure<T>,
+	C extends LiCommandName<T>
+> = Promise<LiCommandHandlerReturn<T, C>>;
 
 export type LiCommandHandlerStructure<
 	LC extends LiCommandRegistryStructure<LC>,
 	RC extends LiCommandRegistryStructure<RC>, C extends LiCommandName<LC>
-> = (value: LiCommandHandlerParam<LC, C>, socket: LiBaseSocket<RC, LC>) => LiCommandHandlerReturn<LC, C>;
+> = (value: LiCommandHandlerParam<LC, C>, socket: LiBaseSocket<RC, LC>) => LiCommandHandlerReturnPromisified<LC, C>;
+
+export type LiCommandRegistryMapValue = {
+	handler: LiCommandHandler;
+	allowPeerToPeer: boolean;
+};
 
 export class LiCommandRegistry<T extends LiCommandRegistryStructure<T>> {
 
-	private commands: Map<string, LiCommandHandler>;
+	private commands: Map<string, LiCommandRegistryMapValue>;
 
 	public constructor() {
 
-		this.commands = new Map<string, LiCommandHandler>();
+		this.commands = new Map<string, LiCommandRegistryMapValue>();
 
 	}
 
-	public implement<C extends LiCommandName<T>>(command: C, handler: LiCommandHandlerStructure<T, any, C>): void {
+	public implement<C extends LiCommandName<T>>(command: C, handler: LiCommandHandlerStructure<T, any, C>, allowPeerToPeer: boolean): void {
 
-		this.commands.set(command, handler);
+		this.commands.set(command, {handler, allowPeerToPeer});
 
 	}
 
-	public getHandlerForCommand(command: string): LiCommandHandler | undefined {
+	public getHandlerForCommand(command: string): LiCommandRegistryMapValue | undefined {
 
 		return this.commands.get(command);
 

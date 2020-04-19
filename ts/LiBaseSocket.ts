@@ -10,11 +10,10 @@ import {StandardType, ObjectType, SpecialType, OptionalType} from "typit";
 import {PromReject, PromResolve} from "@elijahjcobb/prom-type";
 import {BetterJSON} from "@elijahjcobb/better-json";
 import {
-	LiCommandHandler,
-	LiCommandHandlerParam, LiCommandHandlerReturn,
+	LiCommandHandlerParam, LiCommandHandlerReturnPromisified,
 	LiCommandHandlerStructure,
 	LiCommandName,
-	LiCommandRegistry,
+	LiCommandRegistry, LiCommandRegistryMapValue,
 	LiCommandRegistryStructure
 } from "./LiCommandRegistry";
 import {LiMessage, LiMessageHandler, LiMessageManager} from "./LiMessageManager";
@@ -58,7 +57,8 @@ export class LiBaseSocket<LC extends LiCommandRegistryStructure<LC>, RC extends 
 				timestamp: Date.now(),
 				command: "id",
 				param: this.id,
-				id: this.id
+				id: this.id,
+				peerToPeer: false
 			})
 				.then((): void => LiLogger.log("Did send id to socket."))
 				.catch((err: any): void => LiLogger.error(err));
@@ -110,7 +110,8 @@ export class LiBaseSocket<LC extends LiCommandRegistryStructure<LC>, RC extends 
 			timestamp: StandardType.NUMBER,
 			command: StandardType.STRING,
 			id: StandardType.STRING,
-			param: new OptionalType(SpecialType.ANY)
+			param: new OptionalType(SpecialType.ANY),
+			peerToPeer: StandardType.BOOLEAN
 		});
 
 		LiLogger.log(`Did parse message (${message.id}) -> '${dataAsString}'.`);
@@ -128,15 +129,17 @@ export class LiBaseSocket<LC extends LiCommandRegistryStructure<LC>, RC extends 
 		if (command === "return" || command === "error" || command === "id") return this.handleOnReturn(message);
 
 		LiLogger.log(`Looking for handler for message (${message.id}).`);
-		const handler: LiCommandHandler | undefined = this.commandRegistry.getHandlerForCommand(command);
+		const handlerItem: LiCommandRegistryMapValue | undefined = this.commandRegistry.getHandlerForCommand(command);
 
-		if (handler === undefined) {
+
+		if (handlerItem === undefined) {
 
 			await this.send({
 				timestamp: message.timestamp,
 				command: "error",
 				param: new Error("Command does not exist."),
-				id: message.id
+				id: message.id,
+				peerToPeer: false
 			});
 			LiLogger.error("LiBaseSocket.onMessage(): Command not found.");
 			return;
@@ -144,17 +147,32 @@ export class LiBaseSocket<LC extends LiCommandRegistryStructure<LC>, RC extends 
 
 		LiLogger.log(`Found handler for message (${message.id}).`);
 
+		if (message.peerToPeer && !handlerItem.allowPeerToPeer) {
+
+			LiLogger.log(`Command '${command}' does not allow peer to peer and it was a peer to peer message.`);
+
+			return await this.send({
+				timestamp: message.timestamp,
+				command: "error",
+				param: "You tried to invoke a peer-to-peer command but the sibling you invoked it on does not allow peer-to-peer for this command.",
+				id: message.id,
+				peerToPeer: false
+			});
+
+		}
+
 		const param: any = message.param;
 
 		try {
 
-			const returnValue: any = await handler(param, this);
+			const returnValue: any = await handlerItem.handler(param, this);
 
 			await this.send({
 				timestamp: message.timestamp,
 				command: "return",
 				param: returnValue,
-				id: message.id
+				id: message.id,
+				peerToPeer: false
 			});
 
 		} catch (e) {
@@ -168,7 +186,8 @@ export class LiBaseSocket<LC extends LiCommandRegistryStructure<LC>, RC extends 
 				timestamp: message.timestamp,
 				command: "error",
 				param: formattedError,
-				id: message.id
+				id: message.id,
+				peerToPeer: false
 			});
 
 		}
@@ -212,7 +231,7 @@ export class LiBaseSocket<LC extends LiCommandRegistryStructure<LC>, RC extends 
 
 	}
 
-	public implement<C extends LiCommandName<LC>>(command: C, handler: LiCommandHandlerStructure<LC, RC, C>): void {
+	public implement<C extends LiCommandName<LC>>(command: C, handler: LiCommandHandlerStructure<LC, RC, C>, allowPeerToPeer: boolean = false): void {
 
 		if (command === "return" || command === "error") {
 			throw new Error(
@@ -221,11 +240,11 @@ export class LiBaseSocket<LC extends LiCommandRegistryStructure<LC>, RC extends 
 			);
 		}
 
-		this.commandRegistry.implement(command, handler);
+		this.commandRegistry.implement(command, handler, allowPeerToPeer);
 
 	}
 
-	public invoke<C extends LiCommandName<RC>>(command: C, param: LiCommandHandlerParam<RC, C>): LiCommandHandlerReturn<RC, C> {
+	public invoke<C extends LiCommandName<RC>>(command: C, param: LiCommandHandlerParam<RC, C>, peerToPeer: boolean = false): LiCommandHandlerReturnPromisified<RC, C> {
 		return new Promise((resolve: PromResolve<any>, reject: PromReject): void => {
 
 			const handler: (message: LiMessage) => void = (message: LiMessage): void => {
@@ -241,7 +260,8 @@ export class LiBaseSocket<LC extends LiCommandRegistryStructure<LC>, RC extends 
 				id,
 				command,
 				param,
-				timestamp: Date.now()
+				timestamp: Date.now(),
+				peerToPeer
 			}).catch((err: any): void => {
 
 				console.error("LiBaseSocket.invoke:send Failed to send.");

@@ -12,6 +12,7 @@ export interface LiMessage<T = any> {
 	timestamp: number;
 	command: string;
 	param: T;
+	peerToPeer: boolean;
 }
 
 export type LiMessageHandler = (message: LiMessage) => void;

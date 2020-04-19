@@ -5,7 +5,12 @@
  * github.com/elijahjcobb
  */
 import {LiBaseSocket} from "./LiBaseSocket";
-import {LiCommandRegistryStructure} from "./LiCommandRegistry";
+import {
+	LiCommandHandlerParam, LiCommandHandlerReturn,
+	LiCommandHandlerReturnPromisified,
+	LiCommandName,
+	LiCommandRegistryStructure
+} from "./LiCommandRegistry";
 import {PromResolve, PromReject} from "@elijahjcobb/prom-type";
 import * as WS from "ws";
 import {LiLogger} from "./LiLogger";
@@ -21,6 +26,13 @@ export class LiSocket<LC extends LiCommandRegistryStructure<LC>, RC extends LiCo
 	private constructor(config: LiSocketConfig, ws: WS, didReceiveId: () => void) {
 
 		super(ws, undefined, "", didReceiveId);
+
+	}
+
+	public async invokeSibling<C extends LiCommandName<LC>>(id: string, command: C, param: LiCommandHandlerParam<LC, C>): Promise<LiCommandHandlerReturn<LC, C> | undefined> {
+
+		// @ts-ignore
+		return await this.invoke("invokeSibling", {param, id, command});
 
 	}
 
