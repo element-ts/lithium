@@ -13,10 +13,6 @@ export interface PlaygroundClientCommands extends LiCommandRegistryStructure {
 	// 	param: string;
 	// 	return: void;
 	// };
-	peerMessageAllow: {
-		param: void;
-		return: void;
-	};
 	peerMessageDeny: {
 		param: void;
 		return: void;
@@ -27,19 +23,31 @@ export interface PlaygroundClientCommands extends LiCommandRegistryStructure {
 	};
 }
 
+export interface PlaygroundClientSiblingCommands extends LiCommandRegistryStructure {
+	// notify: {
+	// 	param: string;
+	// 	return: void;
+	// };
+	peerMessageAllow: {
+		param: void;
+		return: void;
+	};
+}
+
 (async (): Promise<void> => {
 
-	const socket: LiSocket<PlaygroundClientCommands, PlaygroundServerCommands> = await LiSocket.init({
+	const socket: LiSocket<PlaygroundClientCommands, PlaygroundServerCommands, PlaygroundClientSiblingCommands> = await LiSocket.init({
 		address: "ws://localhost:8080",
-		debug: true
+		debug: true,
+		allowPeerToPeer: true
 	});
 
-	socket.implement("peerMessageAllow", async(): Promise<void> => {
+	socket.implementSibling("peerMessageAllow", async(): Promise<void> => {
 
 
 		console.log("Peer message allowed!");
 
-	}, true);
+	});
 
 	socket.implement("peerMessageDeny", async(): Promise<void> => {
 
@@ -50,7 +58,7 @@ export interface PlaygroundClientCommands extends LiCommandRegistryStructure {
 	socket.implement("newSibling", async (siblingId: string): Promise<void> => {
 
 		await socket.invokeSibling(siblingId, "peerMessageAllow", undefined);
-		await socket.invokeSibling(siblingId, "peerMessageDeny", undefined);
+
 	});
 
 	// socket.implement("notify", async(msg: string): Promise<void> => {

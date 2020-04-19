@@ -19,11 +19,16 @@ import {
 import {LiMessage, LiMessageHandler, LiMessageManager} from "./LiMessageManager";
 import {LiLogger} from "./LiLogger";
 
-export class LiBaseSocket<LC extends LiCommandRegistryStructure<LC>, RC extends LiCommandRegistryStructure<RC>> {
+export class LiBaseSocket<
+	LC extends LiCommandRegistryStructure<LC>,
+	RC extends LiCommandRegistryStructure<RC>,
+	SC extends LiCommandRegistryStructure<SC> = any
+> {
 
 	private id: string;
 	private isConnected: boolean = true;
 	private readonly didReceiveId: (() => void) | undefined;
+	private allowPeerToPeer: boolean;
 
 	protected commandRegistry: LiCommandRegistry<LC>;
 	protected messageManager: LiMessageManager;
@@ -32,13 +37,14 @@ export class LiBaseSocket<LC extends LiCommandRegistryStructure<LC>, RC extends 
 	public onClose: ((code?: number, reason?: string) => void) | undefined;
 	public onError: ((error: Error) => void) | undefined;
 
-	public constructor(socket: WS, commandRegistry?: LiCommandRegistry<LC>, id: string = "", onDidReceiveId: ((() => void) | undefined) = undefined) {
+	public constructor(socket: WS, commandRegistry?: LiCommandRegistry<LC>, id: string = "", onDidReceiveId: ((() => void) | undefined) = undefined, allowPeerToPeer: boolean = false) {
 
 		this.id = id;
 		this.socket = socket;
 		this.commandRegistry = commandRegistry || new LiCommandRegistry<LC>();
 		this.messageManager = new LiMessageManager();
 		this.didReceiveId = onDidReceiveId;
+		this.allowPeerToPeer = allowPeerToPeer;
 
 		this.onMessage = this.onMessage.bind(this);
 		this.socket.on("message", this.onMessage);
@@ -147,7 +153,7 @@ export class LiBaseSocket<LC extends LiCommandRegistryStructure<LC>, RC extends 
 
 		LiLogger.log(`Found handler for message (${message.id}).`);
 
-		if (message.peerToPeer && !handlerItem.allowPeerToPeer) {
+		if (message.peerToPeer && (!handlerItem.allowPeerToPeer || !this.allowPeerToPeer)) {
 
 			LiLogger.log(`Command '${command}' does not allow peer to peer and it was a peer to peer message.`);
 
@@ -228,6 +234,13 @@ export class LiBaseSocket<LC extends LiCommandRegistryStructure<LC>, RC extends 
 		LiLogger.error(`Connection receive error: ${err.name} '${err.message}'`);
 
 		if (this.onError) this.onError(err);
+
+	}
+
+	public implementSibling<C extends LiCommandName<SC>>(command: C, handler: LiCommandHandlerStructure<SC, RC, C>): void {
+
+		// @ts-ignore
+		this.implement(command, handler, true);
 
 	}
 

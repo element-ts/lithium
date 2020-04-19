@@ -19,28 +19,33 @@ export interface LiSocketConfig {
 	address: string;
 	debug?: boolean;
 	bearer?: string;
+	allowPeerToPeer?: boolean;
 }
 
-export class LiSocket<LC extends LiCommandRegistryStructure<LC>, RC extends LiCommandRegistryStructure<RC>> extends LiBaseSocket<LC, RC> {
+export class LiSocket<
+	LC extends LiCommandRegistryStructure<LC>,
+	RC extends LiCommandRegistryStructure<RC>,
+	SC extends LiCommandRegistryStructure<SC>
+> extends LiBaseSocket<LC, RC, SC> {
 
 	private constructor(config: LiSocketConfig, ws: WS, didReceiveId: () => void) {
 
-		super(ws, undefined, "", didReceiveId);
+		super(ws, undefined, "", didReceiveId, config.allowPeerToPeer);
 
 	}
 
-	public async invokeSibling<C extends LiCommandName<LC>>(id: string, command: C, param: LiCommandHandlerParam<LC, C>): Promise<LiCommandHandlerReturn<LC, C> | undefined> {
+	public async invokeSibling<C extends LiCommandName<SC>>(id: string, command: C, param: LiCommandHandlerParam<SC, C>): Promise<LiCommandHandlerReturn<SC, C> | undefined> {
 
 		// @ts-ignore
 		return await this.invoke("invokeSibling", {param, id, command});
 
 	}
 
-	public static init<LocalCommands extends LiCommandRegistryStructure<LocalCommands>, RemoteCommands extends LiCommandRegistryStructure<RemoteCommands>>(config: LiSocketConfig): Promise<LiSocket<LocalCommands, RemoteCommands>> {
+	public static init<LC extends LiCommandRegistryStructure<LC>, RC extends LiCommandRegistryStructure<RC>, SC extends LiCommandRegistryStructure<SC>>(config: LiSocketConfig): Promise<LiSocket<LC, RC, SC>> {
 
 		if (config.debug) LiLogger.enable();
 
-		return new Promise((resolve: PromResolve<LiSocket<LocalCommands, RemoteCommands>>, reject: PromReject): void => {
+		return new Promise((resolve: PromResolve<LiSocket<LC, RC, SC>>, reject: PromReject): void => {
 
 			LiLogger.log(`Preparing to open new socket to: '${config.address}'.`);
 
@@ -58,7 +63,7 @@ export class LiSocket<LC extends LiCommandRegistryStructure<LC>, RC extends LiCo
 
 				LiLogger.log("Waiting for my id.");
 
-				const socket: LiSocket<LocalCommands, RemoteCommands> = new LiSocket(config, ws, (): void => {
+				const socket: LiSocket<LC, RC, SC> = new LiSocket(config, ws, (): void => {
 					LiLogger.log(`Did receive my id: ${socket.getId()}.`);
 					resolve(socket);
 				});

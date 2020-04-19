@@ -27,7 +27,7 @@ export interface LiServerConfig {
 export class LiServer<LC extends LiCommandRegistryStructure<LC>, RC extends LiCommandRegistryStructure<RC>> {
 
 	private server: WS.Server;
-	private sockets: Map<string, LiBaseSocket<any, any>>;
+	private sockets: Map<string, LiBaseSocket<any, any, any>>;
 	private readonly commandRegistry: LiCommandRegistry<LC>;
 	public onSocketClose: ((socket: LiBaseSocket<RC, LC>) => void) | undefined;
 	public onSocketOpen: ((socket: LiBaseSocket<RC, LC>, req: HTTP.IncomingMessage) => Promise<void>) | undefined;
