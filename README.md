@@ -1,14 +1,8 @@
 Welcome to the lithium wiki! This is a work in progress and will be constantly updated. Below you will find pages to
 this wiki but also feel free to view some nice features and information about the package.
 
-## Pages
-* [Home](wiki/)
-* [Server](wiki/Server)
-* [Client](wiki/Client)
-* [Broadcast](wiki/Broadcast)
-* [Peer-to-Peer](wiki/PeerToPeer)
-* [Protocol](wiki/Protocol)
-* [Command Registry](wiki/CommandRegistry)
+## Wiki
+To view the rest of the wiki, please visit [here](https://github.com/elements-ts/lithium/wiki).
 
 ## Summary
 Lithium is a Typescript package available on NPM as a part of the [@elemen-ts](https://element-ts.com) organization.
@@ -89,14 +83,16 @@ await socket.invoke("changeFavoriteNumber", 0);
 ## Features
 
 ### Implement/Invoke
-Once you have a `LiCommandRegistryStructure` ([view docs on 'Command Registry'](wiki/CommandRegistry)) set up you can
+Once you have a `LiCommandRegistryStructure`
+([view docs on 'Command Registry'](https://github.com/elements-ts/lithium/wiki/CommandRegistry)) set up you can
 simply `implement()` and `invoke()` the commands on both the clients and central server. These are type
 checked off of your command registry and will make sure you not only are talking about a command that exists, but you
 are providing the correct parameters and expecting the correct return type.
 
 ### Async
 Everything is written with promises so that you don't have to worry about the messy stuff underneath the scenes. If
-you are interested you can view the page on the [underlying protocol](wiki/Protocol) that messages are sent via.
+you are interested you can view the page on the
+[underlying protocol](https://github.com/elements-ts/lithium/wiki/Protocol) that messages are sent via.
 
 ### Typesafe
 If you try to implement/invoke a method with the incorrect command name, parameter, or return value TypeScript will
@@ -112,7 +108,8 @@ the type the command returns. There is a possibility of `undefined` because inst
 a custom promise handler that will not reject if a client throws an error, it will just make the resulting return
 undefined for that singular client in the map. I think this makes most sense for the use of broadcasting.
 
-You can read more about broadcasts on the [broadcast](wiki/Broadcast) page.
+You can read more about broadcasts on the
+[broadcast](https://github.com/elements-ts/lithium/wiki/Broadcast) page.
 
 ### Peer-To-Peer
 Another cool feature built into lithium is peer-to-peer command invocation. A `LiSocket` actually takes three type
@@ -122,12 +119,13 @@ allow a client to talk to another client. To allow for peer-to-peer, when initia
 `allowPeerToPeer` property to `true` in the config object. If you provide an sibling command but do not set the socket
 to allow peer-to-peer the socket will respond as if the command does not exist.
 
-You can read more about peer-to-peer command invoking on the [peer-to-peer](wiki/PeerToPeer) page.
+You can read more about peer-to-peer command invoking on the
+[peer-to-peer](https://github.com/elements-ts/lithium/wiki/PeerToPeer) page.
 
 ## About
 
 ### Language
-All of lithium is written in [TypeScript](https://www.typescriptlang.org). If you do not know how to use TypeScript don't worry. It is completely compatible with JavaScript.
+All of Lithium is written in [TypeScript](https://www.typescriptlang.org). If you do not know how to use TypeScript don't worry. It is completely compatible with JavaScript.
 
 ### Why?
 I wanted a really easy way to handle web-sockets in my projects and had some free time due to Covid-19.
