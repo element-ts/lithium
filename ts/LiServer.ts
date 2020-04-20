@@ -6,7 +6,7 @@
  */
 
 import {
-	LiCommandHandlerParam, LiCommandHandlerReturnPromisified,
+	LiCommandHandlerParam, LiCommandHandlerReturn, LiCommandHandlerReturnPromisified,
 	LiCommandHandlerStructure,
 	LiCommandName,
 	LiCommandRegistry,
@@ -18,6 +18,7 @@ import * as WS from "ws";
 import * as Crypto from "crypto";
 import {LiLogger} from "./LiLogger";
 import * as HTTP from "http";
+import {PromReject, PromResolve} from "@elijahjcobb/prom-type";
 
 export interface LiServerConfig {
 	debug?: boolean;
@@ -85,13 +86,28 @@ export class LiServer<LC extends LiCommandRegistryStructure<LC>, RC extends LiCo
 
 	}
 
-	public async broadcast<C extends LiCommandName<RC>>(command: C, param: LiCommandHandlerParam<RC, C>): Promise<{[socketId: string]: LiCommandHandlerReturnPromisified<RC, C>}> {
+	public broadcast<C extends LiCommandName<RC>>(command: C, param: LiCommandHandlerParam<RC, C>): Promise<{[socketId: string]: LiCommandHandlerReturn<RC, C> | undefined}> {
+		return new Promise((resolve: PromResolve<{[socketId: string]: LiCommandHandlerReturn<RC, C> | undefined}>): void => {
 
-		const map: {[socketId: string]: LiCommandHandlerReturnPromisified<RC, C>} = {};
-		for (const socket of this.getSockets()) map[socket.getId()] = await socket.invoke(command, param);
+			const map: {[socketId: string]: LiCommandHandlerReturn<RC, C> | undefined} = {};
+			let count: number = this.connectionCount();
 
-		return map;
+			function handler(socket: LiBaseSocket<LC, RC>, returnValue?: LiCommandHandlerReturn<RC, C>): void {
+				count--;
+				map[socket.getId()] = returnValue;
+				if (count === 0) return resolve(map);
+			}
 
+			for (const socket of this.getSockets()) {
+				socket.invoke(command, param)
+					.then((returnValue: LiCommandHandlerReturn<RC, C>): void => handler(socket, returnValue))
+					.catch((err: any): void => {
+						LiLogger.error(err);
+						handler(socket);
+					});
+			}
+
+		});
 	}
 
 	public implement<C extends LiCommandName<LC>>(command: C, handler: LiCommandHandlerStructure<LC, RC, C>): void {
@@ -105,6 +121,12 @@ export class LiServer<LC extends LiCommandRegistryStructure<LC>, RC extends LiCo
 	public getSocket(id: string): LiBaseSocket<LC, RC> | undefined {
 
 		return this.sockets.get(id);
+
+	}
+
+	public connectionCount(): number {
+
+		return this.sockets.size;
 
 	}
 

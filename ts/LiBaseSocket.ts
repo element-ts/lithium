@@ -9,15 +9,17 @@ import * as WS from "ws";
 import {StandardType, ObjectType, SpecialType, OptionalType} from "typit";
 import {PromReject, PromResolve} from "@elijahjcobb/prom-type";
 import {BetterJSON} from "@elijahjcobb/better-json";
-import {
-	LiCommandHandlerParam, LiCommandHandlerReturnPromisified,
-	LiCommandHandlerStructure,
-	LiCommandName,
-	LiCommandRegistry, LiCommandRegistryMapValue,
-	LiCommandRegistryStructure
-} from "./LiCommandRegistry";
 import {LiMessage, LiMessageHandler, LiMessageManager} from "./LiMessageManager";
 import {LiLogger} from "./LiLogger";
+import {
+	LiCommandHandlerParam,
+	LiCommandHandlerReturnPromisified,
+	LiCommandHandlerStructure,
+	LiCommandName,
+	LiCommandRegistry,
+	LiCommandRegistryMapValue,
+	LiCommandRegistryStructure
+} from "./LiCommandRegistry";
 
 export class LiBaseSocket<
 	LC extends LiCommandRegistryStructure<LC>,
@@ -28,7 +30,7 @@ export class LiBaseSocket<
 	private id: string;
 	private isConnected: boolean = true;
 	private readonly didReceiveId: (() => void) | undefined;
-	private allowPeerToPeer: boolean;
+	private readonly allowPeerToPeer: boolean;
 
 	protected commandRegistry: LiCommandRegistry<LC>;
 	protected messageManager: LiMessageManager;

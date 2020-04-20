@@ -39,7 +39,7 @@ export interface PlaygroundClientSiblingCommands extends LiCommandRegistryStruct
 	const socket: LiSocket<PlaygroundClientCommands, PlaygroundServerCommands, PlaygroundClientSiblingCommands> = await LiSocket.init({
 		address: "ws://localhost:8080",
 		debug: true,
-		allowPeerToPeer: true
+		allowPeerToPeer: false
 	});
 
 	socket.implementSibling("peerMessageAllow", async(): Promise<void> => {

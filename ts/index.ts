@@ -9,3 +9,5 @@ export * from "./LiCommandRegistry";
 export * from "./LiBaseSocket";
 export * from "./LiSocket";
 export * from "./LiServer";
+export * from "./LiLogger";
+export * from "./LiMessageManager";

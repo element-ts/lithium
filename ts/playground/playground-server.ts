@@ -5,9 +5,8 @@
  * github.com/elijahjcobb
  */
 
-import {LiBaseSocket, LiCommandRegistryStructure, LiServer, LiSocket} from "../index";
+import {LiBaseSocket, LiCommandRegistryStructure, LiServer} from "../index";
 import {PlaygroundClientCommands} from "./playground-client";
-import * as Crypto from "crypto";
 
 export interface PlaygroundServerCommands extends LiCommandRegistryStructure {
 	// handleBuffer: {
