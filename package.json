@@ -1,8 +1,19 @@
 {
 	"name": "@element-ts/lithium",
 	"version": "0.1.0",
-	"description": "",
-	"keywords": [],
+	"description": "A type-safe remote function invocation library using websockets and TypeScript.",
+	"keywords": [
+		"websocket",
+		"socket",
+		"remote",
+		"function",
+		"invoke",
+		"RFI",
+		"typescript",
+		"broadcast",
+		"peer-to-peer",
+		"PTP"
+	],
 	"main": "js/index",
 	"types": "dts/index",
 	"files": [
