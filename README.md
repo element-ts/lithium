@@ -2,7 +2,7 @@ Welcome to the lithium wiki! This is a work in progress and will be constantly u
 this wiki but also feel free to view some nice features and information about the package.
 
 ## Wiki
-To view the rest of the wiki, please visit [here](https://github.com/elements-ts/lithium/wiki).
+To view the rest of the wiki, please visit [here](https://github.com/element-ts/lithium/wiki).
 
 ## Summary
 Lithium is a Typescript package available on NPM as a part of the [@elemen-ts](https://element-ts.com) organization.
@@ -84,7 +84,7 @@ await socket.invoke("changeFavoriteNumber", 0);
 
 ### Implement/Invoke
 Once you have a `LiCommandRegistryStructure`
-([view docs on 'Command Registry'](https://github.com/elements-ts/lithium/wiki/CommandRegistry)) set up you can
+([view docs on 'Command Registry'](https://github.com/element-ts/lithium/wiki/CommandRegistry)) set up you can
 simply `implement()` and `invoke()` the commands on both the clients and central server. These are type
 checked off of your command registry and will make sure you not only are talking about a command that exists, but you
 are providing the correct parameters and expecting the correct return type.
@@ -92,7 +92,7 @@ are providing the correct parameters and expecting the correct return type.
 ### Async
 Everything is written with promises so that you don't have to worry about the messy stuff underneath the scenes. If
 you are interested you can view the page on the
-[underlying protocol](https://github.com/elements-ts/lithium/wiki/Protocol) that messages are sent via.
+[underlying protocol](https://github.com/element-ts/lithium/wiki/Protocol) that messages are sent via.
 
 ### Typesafe
 If you try to implement/invoke a method with the incorrect command name, parameter, or return value TypeScript will
@@ -109,7 +109,7 @@ a custom promise handler that will not reject if a client throws an error, it wi
 undefined for that singular client in the map. I think this makes most sense for the use of broadcasting.
 
 You can read more about broadcasts on the
-[broadcast](https://github.com/elements-ts/lithium/wiki/Broadcast) page.
+[broadcast](https://github.com/element-ts/lithium/wiki/Broadcast) page.
 
 ### Peer-To-Peer
 Another cool feature built into lithium is peer-to-peer command invocation. A `LiSocket` actually takes three type
@@ -120,7 +120,7 @@ allow a client to talk to another client. To allow for peer-to-peer, when initia
 to allow peer-to-peer the socket will respond as if the command does not exist.
 
 You can read more about peer-to-peer command invoking on the
-[peer-to-peer](https://github.com/elements-ts/lithium/wiki/PeerToPeer) page.
+[peer-to-peer](https://github.com/element-ts/lithium/wiki/PeerToPeer) page.
 
 ## About
 
