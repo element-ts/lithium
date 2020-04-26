@@ -6,11 +6,11 @@
  */
 
 import * as WS from "ws";
-import {StandardType, ObjectType, SpecialType, OptionalType} from "typit";
 import {PromReject, PromResolve} from "@elijahjcobb/prom-type";
 import {BetterJSON} from "@elijahjcobb/better-json";
 import {LiMessage, LiMessageHandler, LiMessageManager} from "./LiMessageManager";
-import {LiLogger} from "./LiLogger";
+import {Neon} from "@element-ts/neon";
+import {OObjectType, OOptional, OStandardType, OType, OAny} from "@element-ts/oxygen";
 import {
 	LiCommandHandlerParam,
 	LiCommandHandlerReturnPromisified,
@@ -59,7 +59,7 @@ export class LiBaseSocket<
 
 		if (this.id !== "") {
 
-			LiLogger.log("Will send id to socket.");
+			Neon.log("Will send id to socket.");
 
 			this.send({
 				timestamp: Date.now(),
@@ -68,8 +68,8 @@ export class LiBaseSocket<
 				id: this.id,
 				peerToPeer: false
 			})
-				.then((): void => LiLogger.log("Did send id to socket."))
-				.catch((err: any): void => LiLogger.error(err));
+				.then((): void => Neon.log("Did send id to socket."))
+				.catch((err: any): void => Neon.err(err));
 		}
 
 	}
@@ -82,12 +82,12 @@ export class LiBaseSocket<
 			const messageString: string = BetterJSON.stringify(message);
 			const messageData: Buffer = Buffer.from(messageString);
 
-			LiLogger.log(`Will send message (${message.id}): '${messageString}'.`);
+			Neon.log(`Will send message (${message.id}): '${messageString}'.`);
 
 			this.socket.send(messageData, (err?: Error): void => {
 
 				if (err) return reject(err);
-				LiLogger.log(`Did send message (${message.id}).`);
+				Neon.log(`Did send message (${message.id}).`);
 				resolve();
 
 			});
@@ -98,11 +98,11 @@ export class LiBaseSocket<
 	private async onMessage(data: WS.Data): Promise<void> {
 
 		if (!(data instanceof Buffer)) {
-			LiLogger.error("LiBaseSocket.onMessage(): Data received was not an instance of Buffer.");
+			Neon.err("LiBaseSocket.onMessage(): Data received was not an instance of Buffer.");
 			return;
 		}
 
-		LiLogger.log(`Did receive message (${data.length.toLocaleString()} bytes).`);
+		Neon.log(`Did receive message (${data.length.toLocaleString()} bytes).`);
 
 		const dataAsString: string = data.toString("utf8");
 		let message: LiMessage;
@@ -110,25 +110,25 @@ export class LiBaseSocket<
 		try {
 			message = BetterJSON.parse(dataAsString);
 		} catch (e) {
-			LiLogger.error("LiBaseSocket.onMessage(): Data received was able to parse to JSON.");
+			Neon.err("LiBaseSocket.onMessage(): Data received was able to parse to JSON.");
 			return;
 		}
 
-		const requiredType: ObjectType = new ObjectType({
-			timestamp: StandardType.NUMBER,
-			command: StandardType.STRING,
-			id: StandardType.STRING,
-			param: new OptionalType(SpecialType.ANY),
-			peerToPeer: StandardType.BOOLEAN
+		const requiredType: OType = OObjectType.follow({
+			timestamp: OStandardType.number,
+			command: OStandardType.string,
+			id: OStandardType.string,
+			param: OOptional.maybe(OAny.any()),
+			peerToPeer: OStandardType.boolean
 		});
 
-		LiLogger.log(`Did parse message (${message.id}) -> '${dataAsString}'.`);
+		Neon.log(`Did parse message (${message.id}) -> '${dataAsString}'.`);
 
-		const isValid: boolean = requiredType.checkConformity(message);
+		const isValid: boolean = requiredType.conforms(message);
 
 		if (!isValid) {
-			console.error(message);
-			console.error("LiBaseSocket.onMessage(): Data received did not conform to lithium message types.");
+			Neon.err(message);
+			Neon.err("LiBaseSocket.onMessage(): Data received did not conform to lithium message types.");
 			return;
 		}
 
@@ -136,7 +136,7 @@ export class LiBaseSocket<
 
 		if (command === "return" || command === "error" || command === "id") return this.handleOnReturn(message);
 
-		LiLogger.log(`Looking for handler for message (${message.id}).`);
+		Neon.log(`Looking for handler for message (${message.id}).`);
 		const handlerItem: LiCommandRegistryMapValue | undefined = this.commandRegistry.getHandlerForCommand(command);
 
 
@@ -149,15 +149,15 @@ export class LiBaseSocket<
 				id: message.id,
 				peerToPeer: false
 			});
-			LiLogger.error("LiBaseSocket.onMessage(): Command not found.");
+			Neon.err("LiBaseSocket.onMessage(): Command not found.");
 			return;
 		}
 
-		LiLogger.log(`Found handler for message (${message.id}).`);
+		Neon.log(`Found handler for message (${message.id}).`);
 
 		if (message.peerToPeer && (!handlerItem.allowPeerToPeer || !this.allowPeerToPeer)) {
 
-			LiLogger.log(`Command '${command}' does not allow peer to peer and it was a peer to peer message.`);
+			Neon.log(`Command '${command}' does not allow peer to peer and it was a peer to peer message.`);
 
 			return await this.send({
 				timestamp: message.timestamp,
@@ -185,7 +185,7 @@ export class LiBaseSocket<
 
 		} catch (e) {
 
-			LiLogger.error(e);
+			Neon.err(e);
 
 			let formattedError: any = e;
 			if (e instanceof Error) formattedError = { error: e.message };
@@ -204,10 +204,10 @@ export class LiBaseSocket<
 
 	private async handleOnReturn(message: LiMessage): Promise<void> {
 
-		LiLogger.log(`Message (${message.id}) is a response.`);
+		Neon.log(`Message (${message.id}) is a response.`);
 
 		if (message.command === "id") {
-			LiLogger.log("Message is incoming id from server.");
+			Neon.log("Message is incoming id from server.");
 			this.id = message.param;
 			if (this.didReceiveId) this.didReceiveId();
 			return ;
@@ -215,7 +215,7 @@ export class LiBaseSocket<
 
 		const handler: LiMessageHandler | undefined = this.messageManager.getHandler(message.id);
 		if (handler === undefined) {
-			LiLogger.error("LiBaseSocket.handleOnReturn(): Handler not found for message id.");
+			Neon.err("LiBaseSocket.handleOnReturn(): Handler not found for message id.");
 			return;
 		}
 
@@ -225,7 +225,7 @@ export class LiBaseSocket<
 
 	private handleOnClose(code?: number, reason?: string): void {
 
-		LiLogger.log(`Connection did close with code '${code}' and message '${reason}'.`);
+		Neon.log(`Connection did close with code '${code}' and message '${reason}'.`);
 		this.isConnected = false;
 		if (this.onClose) this.onClose(code, reason);
 
@@ -233,7 +233,7 @@ export class LiBaseSocket<
 
 	private handleOnError(err: Error): void {
 
-		LiLogger.error(`Connection receive error: ${err.name} '${err.message}'`);
+		Neon.err(`Connection receive error: ${err.name} '${err.message}'`);
 
 		if (this.onError) this.onError(err);
 

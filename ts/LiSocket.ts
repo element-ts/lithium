@@ -14,7 +14,7 @@ import {
 } from "./LiCommandRegistry";
 import {PromResolve, PromReject} from "@elijahjcobb/prom-type";
 import * as WS from "ws";
-import {LiLogger} from "./LiLogger";
+import {Neon} from "@element-ts/neon";
 
 export interface LiSocketConfig {
 	address: string;
@@ -31,8 +31,8 @@ export class LiSocket<
 
 	private constructor(config: LiSocketConfig, ws: WS, didReceiveId: () => void) {
 
-		if (config.debug) LiLogger.enable();
-		else LiLogger.disable();
+		if (config.debug) Neon.enable();
+		Neon.setTitle("@element-ts/lithium LiSocket");
 
 		super(ws, undefined, "", didReceiveId, config.allowPeerToPeer);
 
@@ -47,11 +47,11 @@ export class LiSocket<
 
 	public static init<LC extends LiCommandRegistryStructure<LC>, RC extends LiCommandRegistryStructure<RC>, SC extends LiCommandRegistryStructure<SC> = any>(config: LiSocketConfig): Promise<LiSocket<LC, RC, SC>> {
 
-		if (config.debug) LiLogger.enable();
+		if (config.debug) Neon.enable();
 
 		return new Promise((resolve: PromResolve<LiSocket<LC, RC, SC>>, reject: PromReject): void => {
 
-			LiLogger.log(`Preparing to open new socket to: '${config.address}'.`);
+			Neon.log(`Preparing to open new socket to: '${config.address}'.`);
 
 			const ws: WS = new WS(config.address, {
 				headers: {
@@ -59,20 +59,20 @@ export class LiSocket<
 				}
 			});
 
-			LiLogger.log(`Waiting to open new socket with: '${config.address}'.`);
+			Neon.log(`Waiting to open new socket with: '${config.address}'.`);
 
 			ws.on("open", (): void => {
 
-				LiLogger.log(`Did open new socket with: '${config.address}'.`);
+				Neon.log(`Did open new socket with: '${config.address}'.`);
 
-				LiLogger.log("Waiting for my id.");
+				Neon.log("Waiting for my id.");
 
 				const socket: LiSocket<LC, RC, SC> = new LiSocket(config, ws, (): void => {
-					LiLogger.log(`Did receive my id: ${socket.getId()}.`);
+					Neon.log(`Did receive my id: ${socket.getId()}.`);
 					resolve(socket);
 				});
 
-				LiLogger.log(`Did create LiSocket instance from WS socket.`);
+				Neon.log(`Did create LiSocket instance from WS socket.`);
 
 
 			});

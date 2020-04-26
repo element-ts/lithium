@@ -16,7 +16,7 @@ import {
 import {LiBaseSocket} from "./LiBaseSocket";
 import * as WS from "ws";
 import * as Crypto from "crypto";
-import {LiLogger} from "./LiLogger";
+import {Neon} from "@element-ts/neon";
 import * as HTTP from "http";
 import {PromReject, PromResolve} from "@elijahjcobb/prom-type";
 
@@ -35,7 +35,8 @@ export class LiServer<LC extends LiCommandRegistryStructure<LC>, RC extends LiCo
 
 	public constructor(config: LiServerConfig) {
 
-		if (config.debug) LiLogger.enable();
+		if (config.debug) Neon.enable();
+		Neon.setTitle("@element-ts/lithium LiServer");
 
 		this.commandRegistry = new LiCommandRegistry();
 		this.server = new WS.Server({port: config.port});
@@ -61,7 +62,7 @@ export class LiServer<LC extends LiCommandRegistryStructure<LC>, RC extends LiCo
 
 	private handleNewConnection(ws: WS, req: HTTP.IncomingMessage): void {
 
-		LiLogger.log(`Did receive new connection from ip: '${req.connection.remoteAddress}'.`);
+		Neon.log(`Did receive new connection from ip: '${req.connection.remoteAddress}'.`);
 
 		let id: string = Crypto.randomBytes(16).toString("hex");
 		while (this.sockets.has(id)) id = Crypto.randomBytes(16).toString("hex");
@@ -76,7 +77,7 @@ export class LiServer<LC extends LiCommandRegistryStructure<LC>, RC extends LiCo
 		});
 
 		this.sockets.set(id, socket);
-		if (this.onSocketOpen) this.onSocketOpen(socket, req).catch((err: any): void => LiLogger.error(err));
+		if (this.onSocketOpen) this.onSocketOpen(socket, req).catch((err: any): void => Neon.err(err));
 
 	}
 
@@ -102,7 +103,7 @@ export class LiServer<LC extends LiCommandRegistryStructure<LC>, RC extends LiCo
 				socket.invoke(command, param)
 					.then((returnValue: LiCommandHandlerReturn<RC, C>): void => handler(socket, returnValue))
 					.catch((err: any): void => {
-						LiLogger.error(err);
+						Neon.err(err);
 						handler(socket);
 					});
 			}
