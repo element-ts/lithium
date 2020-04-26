@@ -26,7 +26,7 @@ export interface LiSocketConfig {
 export class LiSocket<
 	LC extends LiCommandRegistryStructure<LC>,
 	RC extends LiCommandRegistryStructure<RC>,
-	SC extends LiCommandRegistryStructure<SC>
+	SC extends LiCommandRegistryStructure<SC> = any
 > extends LiBaseSocket<LC, RC, SC> {
 
 	private constructor(config: LiSocketConfig, ws: WS, didReceiveId: () => void) {
@@ -45,7 +45,7 @@ export class LiSocket<
 
 	}
 
-	public static init<LC extends LiCommandRegistryStructure<LC>, RC extends LiCommandRegistryStructure<RC>, SC extends LiCommandRegistryStructure<SC>>(config: LiSocketConfig): Promise<LiSocket<LC, RC, SC>> {
+	public static init<LC extends LiCommandRegistryStructure<LC>, RC extends LiCommandRegistryStructure<RC>, SC extends LiCommandRegistryStructure<SC> = any>(config: LiSocketConfig): Promise<LiSocket<LC, RC, SC>> {
 
 		if (config.debug) LiLogger.enable();
 
