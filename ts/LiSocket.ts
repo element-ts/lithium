@@ -4,6 +4,7 @@
  * elijahcobb.com
  * github.com/elijahjcobb
  */
+
 import {LiBaseSocket} from "./LiBaseSocket";
 import {
 	LiCommandHandlerParam, LiCommandHandlerReturn,
@@ -29,6 +30,9 @@ export class LiSocket<
 > extends LiBaseSocket<LC, RC, SC> {
 
 	private constructor(config: LiSocketConfig, ws: WS, didReceiveId: () => void) {
+
+		if (config.debug) LiLogger.enable();
+		else LiLogger.disable();
 
 		super(ws, undefined, "", didReceiveId, config.allowPeerToPeer);
 
