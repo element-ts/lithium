@@ -18,7 +18,7 @@ import * as WS from "ws";
 import * as Crypto from "crypto";
 import {Neon} from "@element-ts/neon";
 import * as HTTP from "http";
-import {PromReject, PromResolve} from "@elijahjcobb/prom-type";
+import {PromResolve} from "@elijahjcobb/prom-type";
 
 export interface LiServerConfig {
 	debug?: boolean;
@@ -28,15 +28,21 @@ export interface LiServerConfig {
 export class LiServer<LC extends LiCommandRegistryStructure<LC>, RC extends LiCommandRegistryStructure<RC>> {
 
 	private server: WS.Server;
-	private sockets: Map<string, LiBaseSocket<any, any, any>>;
+	private readonly config: LiServerConfig;
+	private sockets: Map<string, LiBaseSocket<any, any>>;
 	private readonly commandRegistry: LiCommandRegistry<LC>;
 	public onSocketClose: ((socket: LiBaseSocket<RC, LC>) => void) | undefined;
 	public onSocketOpen: ((socket: LiBaseSocket<RC, LC>, req: HTTP.IncomingMessage) => Promise<void>) | undefined;
+	public static logger: Neon = new Neon();
 
 	public constructor(config: LiServerConfig) {
 
-		if (config.debug) Neon.enable();
-		Neon.setTitle("@element-ts/lithium LiServer");
+		this.config = config;
+
+		if (config.debug) {
+			LiServer.logger.enable();
+			LiServer.logger.setTitle("@element-ts/lithium LiServer");
+		}
 
 		this.commandRegistry = new LiCommandRegistry();
 		this.server = new WS.Server({port: config.port});
@@ -62,12 +68,12 @@ export class LiServer<LC extends LiCommandRegistryStructure<LC>, RC extends LiCo
 
 	private handleNewConnection(ws: WS, req: HTTP.IncomingMessage): void {
 
-		Neon.log(`Did receive new connection from ip: '${req.connection.remoteAddress}'.`);
+		LiServer.logger.log(`Did receive new connection from ip: '${req.connection.remoteAddress}'.`);
 
 		let id: string = Crypto.randomBytes(16).toString("hex");
 		while (this.sockets.has(id)) id = Crypto.randomBytes(16).toString("hex");
 
-		const socket: LiBaseSocket<any, any> = new LiBaseSocket(ws, this.commandRegistry, id);
+		const socket: LiBaseSocket<any, any> = new LiBaseSocket(ws, this.commandRegistry, id, undefined, undefined, this.config.debug);
 
 		socket.onClose = ((): void => {
 
@@ -77,7 +83,7 @@ export class LiServer<LC extends LiCommandRegistryStructure<LC>, RC extends LiCo
 		});
 
 		this.sockets.set(id, socket);
-		if (this.onSocketOpen) this.onSocketOpen(socket, req).catch((err: any): void => Neon.err(err));
+		if (this.onSocketOpen) this.onSocketOpen(socket, req).catch((err: any): void => LiServer.logger.err(err));
 
 	}
 
@@ -103,7 +109,7 @@ export class LiServer<LC extends LiCommandRegistryStructure<LC>, RC extends LiCo
 				socket.invoke(command, param)
 					.then((returnValue: LiCommandHandlerReturn<RC, C>): void => handler(socket, returnValue))
 					.catch((err: any): void => {
-						Neon.err(err);
+						LiServer.logger.err(err);
 						handler(socket);
 					});
 			}
