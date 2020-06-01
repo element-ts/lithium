@@ -1,6 +1,6 @@
 {
   "name": "@element-ts/lithium",
-  "version": "0.1.3",
+  "version": "0.1.4",
   "description": "A type-safe remote function invocation library using websockets and TypeScript.",
   "keywords": [
     "websocket",
@@ -43,7 +43,7 @@
   "homepage": "https://github.com/element-ts/lithium#readme",
   "dependencies": {
     "@element-ts/neon": "latest",
-    "@element-ts/oxygen": "^1.0.1",
+    "@element-ts/oxygen": "latest",
     "@elijahjcobb/better-json": "latest",
     "@elijahjcobb/prom-type": "latest",
     "@types/ws": "latest",

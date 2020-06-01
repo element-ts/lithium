@@ -30,7 +30,8 @@ export type LiCommandHandlerReturnPromisified<
 
 export type LiCommandHandlerStructure<
 	LC extends LiCommandRegistryStructure<LC>,
-	RC extends LiCommandRegistryStructure<RC>, C extends LiCommandName<LC>
+	RC extends LiCommandRegistryStructure<RC>,
+	C extends LiCommandName<LC>
 > = (value: LiCommandHandlerParam<LC, C>, socket: LiBaseSocket<RC, LC>) => LiCommandHandlerReturnPromisified<LC, C>;
 
 export type LiCommandRegistryMapValue = {
