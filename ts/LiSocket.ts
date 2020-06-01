@@ -8,7 +8,6 @@
 import {LiBaseSocket} from "./LiBaseSocket";
 import {
 	LiCommandHandlerParam, LiCommandHandlerReturn,
-	LiCommandHandlerReturnPromisified,
 	LiCommandName,
 	LiCommandRegistryStructure
 } from "./LiCommandRegistry";
