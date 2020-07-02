@@ -42,18 +42,18 @@
   },
   "homepage": "https://github.com/element-ts/lithium#readme",
   "dependencies": {
-    "@element-ts/neon": "latest",
+    "@element-ts/neon": "^1.0.3",
     "@element-ts/oxygen": "latest",
     "@elijahjcobb/better-json": "latest",
     "@elijahjcobb/prom-type": "latest",
-    "@types/ws": "latest",
-    "ws": "latest"
+    "@types/ws": "^7.2.6",
+    "ws": "^7.3.0"
   },
   "devDependencies": {
-    "@types/node": "latest",
-    "typescript": "latest",
-    "tslint": "latest",
-    "jest": "latest",
-    "@types/jest": "latest"
+    "@types/jest": "^26.0.3",
+    "@types/node": "^14.0.14",
+    "jest": "^26.1.0",
+    "tslint": "^6.1.2",
+    "typescript": "^3.9.5"
   }
 }
