@@ -13,7 +13,7 @@ import {
 	LiCommandRegistryStructure
 } from "./LiCommandRegistry";
 
-import {LiBaseSocket} from "./LiBaseSocket";
+import {LiBaseNodeSocket} from "./LiBaseNodeSocket";
 import * as WS from "ws";
 import * as Crypto from "crypto";
 import {Neon} from "@element-ts/neon";
@@ -29,10 +29,10 @@ export class LiServer<LC extends LiCommandRegistryStructure<LC>, RC extends LiCo
 
 	private server: WS.Server;
 	private readonly config: LiServerConfig;
-	private sockets: Map<string, LiBaseSocket<any, any>>;
+	private sockets: Map<string, LiBaseNodeSocket<any, any>>;
 	private readonly commandRegistry: LiCommandRegistry<LC>;
-	public onSocketClose: ((socket: LiBaseSocket<RC, LC>) => void) | undefined;
-	public onSocketOpen: ((socket: LiBaseSocket<RC, LC>, req: HTTP.IncomingMessage) => Promise<void>) | undefined;
+	public onSocketClose: ((socket: LiBaseNodeSocket<RC, LC>) => void) | undefined;
+	public onSocketOpen: ((socket: LiBaseNodeSocket<RC, LC>, req: HTTP.IncomingMessage) => Promise<void>) | undefined;
 	public static logger: Neon = new Neon();
 
 	public constructor(config: LiServerConfig) {
@@ -46,7 +46,7 @@ export class LiServer<LC extends LiCommandRegistryStructure<LC>, RC extends LiCo
 
 		this.commandRegistry = new LiCommandRegistry();
 		this.server = new WS.Server({port: config.port});
-		this.sockets = new Map<string, LiBaseSocket<any, any>>();
+		this.sockets = new Map<string, LiBaseNodeSocket<any, any>>();
 
 		this.handlePeerToPeerSetup();
 
@@ -73,7 +73,7 @@ export class LiServer<LC extends LiCommandRegistryStructure<LC>, RC extends LiCo
 		let id: string = Crypto.randomBytes(16).toString("hex");
 		while (this.sockets.has(id)) id = Crypto.randomBytes(16).toString("hex");
 
-		const socket: LiBaseSocket<any, any> = new LiBaseSocket(ws, this.commandRegistry, id, undefined, undefined, this.config.debug);
+		const socket: LiBaseNodeSocket<any, any> = new LiBaseNodeSocket(ws, this.commandRegistry, id, undefined, undefined, this.config.debug);
 
 		socket.onClose = ((): void => {
 
@@ -87,7 +87,7 @@ export class LiServer<LC extends LiCommandRegistryStructure<LC>, RC extends LiCo
 
 	}
 
-	public getSockets(): IterableIterator<LiBaseSocket<LC, RC>> {
+	public getSockets(): IterableIterator<LiBaseNodeSocket<LC, RC>> {
 
 		return this.sockets.values();
 
@@ -99,7 +99,7 @@ export class LiServer<LC extends LiCommandRegistryStructure<LC>, RC extends LiCo
 			const map: {[socketId: string]: LiCommandHandlerReturn<RC, C> | undefined} = {};
 			let count: number = this.connectionCount();
 
-			function handler(socket: LiBaseSocket<LC, RC>, returnValue?: LiCommandHandlerReturn<RC, C>): void {
+			function handler(socket: LiBaseNodeSocket<LC, RC>, returnValue?: LiCommandHandlerReturn<RC, C>): void {
 				count--;
 				map[socket.getId()] = returnValue;
 				if (count === 0) return resolve(map);
@@ -125,7 +125,7 @@ export class LiServer<LC extends LiCommandRegistryStructure<LC>, RC extends LiCo
 		return this.getSocket(id)?.invoke(command, param, peerToPeer);
 	}
 
-	public getSocket(id: string): LiBaseSocket<LC, RC> | undefined {
+	public getSocket(id: string): LiBaseNodeSocket<LC, RC> | undefined {
 
 		return this.sockets.get(id);
 

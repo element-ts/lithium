@@ -6,7 +6,7 @@
  */
 
 export * from "./LiCommandRegistry";
-export * from "./LiBaseSocket";
-export * from "./LiSocket";
+export * from "./LiBaseNodeSocket";
+export * from "./LiNodeSocket";
 export * from "./LiServer";
 export * from "./LiMessageManager";

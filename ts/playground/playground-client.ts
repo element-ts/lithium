@@ -5,12 +5,12 @@
  * github.com/elijahjcobb
  */
 
-import {LiSocket} from "../index";
+import {LiNodeSocket} from "../index";
 import {MyServerCommands, MyClientCommands} from "./playground-types";
 
 (async (): Promise<void> => {
 
-	const socket: LiSocket<MyClientCommands, MyServerCommands> = await LiSocket.init({
+	const socket: LiNodeSocket<MyClientCommands, MyServerCommands> = await LiNodeSocket.init({
 		address: "ws://localhost:8080",
 		debug: true,
 		allowPeerToPeer: true

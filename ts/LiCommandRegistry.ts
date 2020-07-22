@@ -4,11 +4,12 @@
  * elijahcobb.com
  * github.com/elijahjcobb
  */
-import {LiBaseSocket} from "./LiBaseSocket";
+import {LiBaseNodeSocket} from "./LiBaseNodeSocket";
+import {LiSocket} from "./LiSocket";
 
 export type LiCommandRegistryCommand<P = any, R = any> = {param: P, return: R};
 export type LiCommandRegistryStructure<T extends object = object> = { [key in keyof T]: LiCommandRegistryCommand; };
-export type LiCommandHandler = (value: any, socket: LiBaseSocket<any, any>) => Promise<any>;
+export type LiCommandHandler = (value: any, socket: LiSocket<any, any>) => Promise<any>;
 export type LiCommandName<T extends LiCommandRegistryStructure> = (keyof T) & string;
 export type LiCommand<T extends LiCommandRegistryStructure, C extends LiCommandName<T>> = T[C];
 
@@ -32,7 +33,7 @@ export type LiCommandHandlerStructure<
 	LC extends LiCommandRegistryStructure<LC>,
 	RC extends LiCommandRegistryStructure<RC>,
 	C extends LiCommandName<LC>
-> = (value: LiCommandHandlerParam<LC, C>, socket: LiBaseSocket<RC, LC>) => LiCommandHandlerReturnPromisified<LC, C>;
+> = (value: LiCommandHandlerParam<LC, C>, socket: LiSocket<RC, LC>) => LiCommandHandlerReturnPromisified<LC, C>;
 
 export type LiCommandRegistryMapValue = {
 	handler: LiCommandHandler;

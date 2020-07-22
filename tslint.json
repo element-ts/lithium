@@ -71,7 +71,7 @@
 			"allow-undefined-check"
 		],
 		"typedef": [
-			true,
+			false,
 			"call-signature",
 			"arrow-call-signature",
 			"parameter",

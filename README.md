@@ -64,10 +64,10 @@ server.implement("changeFavoriteNumber", async(num: number): Promise<void> => {
 #### Client
 `client.ts`
 ```typescript
-import {LiSocket} from "@element-ts/lithium";
+import {LiNodeSocket} from "@element-ts/lithium";
 import {MyServerCommands, MyClientCommands} from "./playground-types";
 
-const socket: LiSocket<MyClientCommands, MyServerCommands> = await LiSocket.init({
+const socket: LiNodeSocket<MyClientCommands, MyServerCommands> = await LiNodeSocket.init({
     address: "ws://localhost:8080",
     debug: true
 });
@@ -112,10 +112,10 @@ You can read more about broadcasts on the
 [broadcast](https://github.com/element-ts/lithium/wiki/Broadcast) page.
 
 ### Peer-To-Peer
-Another cool feature built into lithium is peer-to-peer command invocation. A `LiSocket` actually takes three type
+Another cool feature built into lithium is peer-to-peer command invocation. A `LiNodeSocket` actually takes three type
 parameters. The third is `SC` which stands for _'Sibling Commands'_ and follows the same `LiCommandRegistryStructure`.
-Once `SC` is provided to a `LiSocket`, you can access the `implementSibling()` and `invokeSibling()` methods. These
-allow a client to talk to another client. To allow for peer-to-peer, when initializing a `LiSocket` you must set the
+Once `SC` is provided to a `LiNodeSocket`, you can access the `implementSibling()` and `invokeSibling()` methods. These
+allow a client to talk to another client. To allow for peer-to-peer, when initializing a `LiNodeSocket` you must set the
 `allowPeerToPeer` property to `true` in the config object. If you provide an sibling command but do not set the socket
 to allow peer-to-peer the socket will respond as if the command does not exist.
 
