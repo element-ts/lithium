@@ -11,7 +11,7 @@ import {
 	LiCommandName,
 	LiCommandRegistry,
 	LiCommandRegistryStructure
-} from "./LiCommandRegistry";
+} from "../core/LiCommandRegistry";
 
 import {LiBaseNodeSocket} from "./LiBaseNodeSocket";
 import * as WS from "ws";

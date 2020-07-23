@@ -4,7 +4,7 @@
  * elijahcobb.com
  * github.com/elijahjcobb
  */
-import {LiBaseNodeSocket} from "./LiBaseNodeSocket";
+
 import {LiSocket} from "./LiSocket";
 
 export type LiCommandRegistryCommand<P = any, R = any> = {param: P, return: R};

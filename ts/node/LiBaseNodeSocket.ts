@@ -8,8 +8,8 @@
 import {
 	LiCommandRegistry,
 	LiCommandRegistryStructure
-} from "./LiCommandRegistry";
-import {LiSocket} from "./LiSocket";
+} from "../core/LiCommandRegistry";
+import {LiSocket} from "../core/LiSocket";
 import * as WS from "ws";
 
 export class LiBaseNodeSocket<
@@ -23,7 +23,7 @@ export class LiBaseNodeSocket<
 		super({
 			close: socket.close,
 			send: socket.send,
-			onMessage: (handler: (data: Buffer) => void): void => {
+			onMessage: (handler: (data: string) => void): void => {
 				socket.on("message", handler);
 			},
 			onError: (handler: (err: Error) => void): void => {

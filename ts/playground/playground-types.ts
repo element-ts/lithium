@@ -5,7 +5,7 @@
  * github.com/elijahjcobb
  */
 
-import {LiCommandRegistryStructure} from "../LiCommandRegistry";
+import {LiCommandRegistryStructure} from "../core/LiCommandRegistry";
 
 export interface MyServerCommands extends LiCommandRegistryStructure {
 	changeFavoriteNumber: {

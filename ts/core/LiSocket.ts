@@ -9,7 +9,7 @@ import {PromReject, PromResolve} from "@elijahjcobb/prom-type";
 import {BetterJSON} from "@elijahjcobb/better-json";
 import {LiMessage, LiMessageHandler, LiMessageManager} from "./LiMessageManager";
 import {Neon} from "@element-ts/neon";
-import {OObjectType, OOptional, OStandardType, OType, OAny} from "@element-ts/oxygen";
+import {OObjectType, OOptional, OStandardType, OAny} from "@element-ts/oxygen";
 import {
 	LiCommandHandlerParam,
 	LiCommandHandlerReturnPromisified,
@@ -22,15 +22,10 @@ import {
 
 export interface SocketAble {
 	close(): void;
-	send(data: BufferAble, handler: (err?: Error) => void): void;
-	onMessage(handler: (data: BufferAble) => void): void;
+	send(data: string, handler: (err?: Error) => void): void;
+	onMessage(handler: (data: any) => void): void;
 	onClose(handler: (code?: number, reason?: string) => void): void;
 	onError(handler: (err: Error) => void): void;
-}
-
-export interface BufferAble<T = any> {
-	binaryToUtf8: (value: T) => string;
-	utf8ToBinary: (value: string) => T;
 }
 
 export class LiSocket<
@@ -100,11 +95,10 @@ export class LiSocket<
 			if (!this.isConnected) return resolve();
 
 			const messageString: string = BetterJSON.stringify(message);
-			const messageData: Buffer = Buffer.from(messageString);
 
 			LiSocket.logger.log(`Will send message (${message.id}): '${messageString}'.`);
 
-			this.socket.send(messageData, (err?: Error): void => {
+			this.socket.send(messageString, (err?: Error): void => {
 
 				if (err) return reject(err);
 				LiSocket.logger.log(`Did send message (${message.id}).`);
@@ -117,18 +111,17 @@ export class LiSocket<
 
 	private async onMessage(data: any): Promise<void> {
 
-		if (!(data instanceof Buffer)) {
-			LiSocket.logger.err("LiSocket.onMessage(): Data received was not an instance of Buffer.");
+		if (typeof data !== "string") {
+			LiSocket.logger.err("LiSocket.onMessage(): Data received was not an instance of string.");
 			return;
 		}
 
 		LiSocket.logger.log(`Did receive message (${data.length.toLocaleString()} bytes).`);
 
-		const dataAsString: string = data.toString("utf8");
 		let message: LiMessage;
 
 		try {
-			message = BetterJSON.parse(dataAsString);
+			message = BetterJSON.parse(data);
 		} catch (e) {
 			LiSocket.logger.err("LiSocket.onMessage(): Data received was able to parse to JSON.");
 			return;
@@ -142,7 +135,7 @@ export class LiSocket<
 			peerToPeer: OStandardType.boolean
 		});
 
-		LiSocket.logger.log(`Did parse message (${message.id}) -> '${dataAsString}'.`);
+		LiSocket.logger.log(`Did parse message (${message.id}) -> '${data}'.`);
 
 		const isValid: boolean = requiredType.conforms(message);
 

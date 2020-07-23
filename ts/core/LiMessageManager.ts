@@ -5,8 +5,6 @@
  * github.com/elijahjcobb
  */
 
-import * as Crypto from "crypto";
-
 export interface LiMessage<T = any> {
 	id: string;
 	timestamp: number;
@@ -29,8 +27,8 @@ export class LiMessageManager {
 
 	public generateId(handler: LiMessageHandler): string {
 
-		let id: string = Crypto.randomBytes(16).toString("hex");
-		while (this.messages.has(id)) id = Crypto.randomBytes(16).toString("hex");
+		let id: string = LiMessageManager.randomId();
+		while (this.messages.has(id)) id = LiMessageManager.randomId();
 		this.messages.set(id, handler);
 
 		return id;
@@ -42,5 +40,16 @@ export class LiMessageManager {
 		return this.messages.get(id);
 
 	}
+
+	private static randomId(length: number = 16): string {
+
+		let result = "";
+		const options = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+		for (let i = 0; i < length; i++) result += options[Math.floor(Math.random() * options.length)];
+
+		return result;
+
+	}
+
 
 }

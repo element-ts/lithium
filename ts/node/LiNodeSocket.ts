@@ -10,7 +10,7 @@ import {
 	LiCommandHandlerParam, LiCommandHandlerReturn,
 	LiCommandName,
 	LiCommandRegistryStructure
-} from "./LiCommandRegistry";
+} from "../core/LiCommandRegistry";
 import {PromResolve, PromReject} from "@elijahjcobb/prom-type";
 import * as WS from "ws";
 import {Neon} from "@element-ts/neon";
