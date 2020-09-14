@@ -122,6 +122,9 @@ to allow peer-to-peer the socket will respond as if the command does not exist.
 You can read more about peer-to-peer command invoking on the
 [peer-to-peer](https://github.com/element-ts/lithium/wiki/PeerToPeer) page.
 
+## Protocol
+... coming soon
+
 ## About
 
 ### Language
